@@ -1,5 +1,5 @@
-# GoKit CLI  [![Build Status](https://travis-ci.org/kujtimiihoxha/kit.svg?branch=master)](https://travis-ci.org/kujtimiihoxha/kit)[![Go Report Card](https://goreportcard.com/badge/github.com/kujtimiihoxha/kit)](https://goreportcard.com/report/github.com/kujtimiihoxha/kit)[![Coverage Status](https://coveralls.io/repos/github/kujtimiihoxha/kit/badge.svg?branch=master)](https://coveralls.io/github/kujtimiihoxha/kit?branch=master)
-I fork the project from [kit](https://github.com/kujtimiihoxha/kit) and plan to maintain it in the future. The kit tool is a great job, and deeply used in our team. Some features and bugs have been done and fixed, such as supporting go module,replacing some old dependencies and so on. I am very glad to receive recommend about it.  
+# GoKit CLI  [![Build Status](https://github.com/GrantZheng/kit/workflows/Go/badge.svg)](https://github.com/GrantZheng/kit/actions)[![Go Report Card](https://goreportcard.com/badge/github.com/GrantZheng/kit)](https://goreportcard.com/report/github.com/GrantZheng/kit)[![Coverage Status](https://coveralls.io/repos/github/GrantZheng/kit/badge.svg?branch=master)](https://coveralls.io/github/GrantZheng/kit?branch=master)
+I fork the project from [kit](https://github.com/kujtimiihoxha/kit) and plan to maintain it in the future. The kit tool is a great job, and deeply used in our team. Some features and bugs have been done and fixed, such as supporting go module,replacing some old dependencies and so on. I am very glad to receive recommend about it.
 
 This project is a more advanced version of [gk](https://github.com/kujtimiihoxha/gk).
 The goal of the gokit cli is to be a tool that you can use while you develop your microservices with `gokit`.
@@ -8,7 +8,7 @@ While `gk` did help you create your basic folder structure it was not really abl
 This is what `GoKit Cli` is aiming to change.
 
 
-# Prerequisites 
+# Prerequisites
 `Go` is a requirement to be able to test your services.[gokit](https://github.com/go-kit/kit) is needed.To utilise generation of gRPC service code through kit generate service <SERVICE_NAME> -t grpc you will need to install the [grpc prequisites](https://grpc.io/docs/languages/go/quickstart/).
 ```
 go get -u google.golang.org/grpc
@@ -16,14 +16,14 @@ go get -u github.com/golang/protobuf/protoc-gen-go
 ```
 
 # Table of Content
- - [Installation](#installation)
- - [Usage](#usage)
- - [Create a new service](#create-a-new-service)
- - [Generate the service](#generate-the-service)
- - [Generate the client library](#generate-the-client-library)
- - [Generate new middlewares](#generate-new-middleware)
- - [Enable docker integration](#enable-docker-integration)
- 
+- [Installation](#installation)
+- [Usage](#usage)
+- [Create a new service](#create-a-new-service)
+- [Generate the service](#generate-the-service)
+- [Generate the client library](#generate-the-client-library)
+- [Generate new middlewares](#generate-new-middleware)
+- [Enable docker integration](#enable-docker-integration)
+
 # Installation
 Before you install please read [prerequisites](#prerequisites)
 ```bash
@@ -61,8 +61,8 @@ package service
 
 // HelloService describes the service.
 type HelloService interface {
-	// Add your methods here
-	// e.x: Foo(ctx context.Context,s string)(rs string, err error)
+ // Add your methods here
+ // e.x: Foo(ctx context.Context,s string)(rs string, err error)
 }
 ```
 When you are generating the service and the client library, the module name in the go.mod file could be autodetected.
@@ -80,12 +80,12 @@ This command will do these things:
 - If using` --dmw` create the endpoint middleware: `hello/pkg/endpoint/middleware.go`
 - Create the transport files e.x `http`: `service-name/pkg/http/handler.go`
 - Create the service main file :boom:   
-`hello/cmd/service/service.go`  
-`hello/cmd/service/service_gen.go`   
-`hello/cmd/main.go`
+  `hello/cmd/service/service.go`  
+  `hello/cmd/service/service_gen.go`   
+  `hello/cmd/main.go`
 
-:warning: **Notice** all the files that end with `_gen` will be regenerated when you add endpoints to your service and 
-you rerun `kit g s hello` :warning: 
+:warning: **Notice** all the files that end with `_gen` will be regenerated when you add endpoints to your service and
+you rerun `kit g s hello` :warning:
 
 You can run the service by running:
 ```bash
@@ -101,25 +101,25 @@ This will generate the client library :sparkles: `http/client/http/http.go` that
 package main
 
 import (
-	"context"
-	"fmt"
+ "context"
+ "fmt"
 
-	client "hello/client/http"
-	"github.com/go-kit/kit/transport/http"
+ client "hello/client/http"
+ "github.com/go-kit/kit/transport/http"
 )
 
 func main() {
-	svc, err := client.New("http://localhost:8081", map[string][]http.ClientOption{})
-	if err != nil {
-		panic(err)
-	}
+ svc, err := client.New("http://localhost:8081", map[string][]http.ClientOption{})
+ if err != nil {
+  panic(err)
+ }
 
-	r, err := svc.Foo(context.Background(), "hello")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("Result:", r)
+ r, err := svc.Foo(context.Background(), "hello")
+ if err != nil {
+  fmt.Println("Error:", err)
+  return
+ }
+ fmt.Println("Result:", r)
 }
 ```
 # Generate new middleware
@@ -133,12 +133,12 @@ The only thing left to do is add your middleware logic and wire the middleware w
 ```bash
 kit g d
 ```
-This will add the individual service docker files and one `docker-compose.yml` file that will allow you to start 
+This will add the individual service docker files and one `docker-compose.yml` file that will allow you to start
 your services.
-To start your services just run 
+To start your services just run
 ```bash
 docker-compose up
 ```
 
 After you run `docker-compose up` your services will start up and any change you make to your code will automatically
- rebuild and restart your service (only the service that is changed)
+rebuild and restart your service (only the service that is changed)
