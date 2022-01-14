@@ -24,12 +24,11 @@ jobs:
     - name: Test
       run: |
         go test -race -v ./...
-        # go install github.com/modocache/gover@latest
-        # go install github.com/mattn/goveralls@latest
-        # here will be a problem, see https://github.com/Masterminds/glide/issues/1082
-        # go install github.com/Masterminds/glide@latest
-        # chmod +x coveralls.bash
-        # ./coveralls.bash
 
     - name: Install
       run: go install .
+
+    - name: Generate Code
+      run: |
+        chmod +x ./script/gen_test.sh
+        ./script/gen_test.sh

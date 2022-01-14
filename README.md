@@ -11,8 +11,8 @@ This is what `GoKit Cli` is aiming to change.
 # Prerequisites
 `Go` is a requirement to be able to test your services.[gokit](https://github.com/go-kit/kit) is needed.To utilise generation of gRPC service code through kit generate service <SERVICE_NAME> -t grpc you will need to install the [grpc prequisites](https://grpc.io/docs/languages/go/quickstart/).
 ```
-go get -u google.golang.org/grpc
-go get -u github.com/golang/protobuf/protoc-gen-go
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
 # Table of Content
