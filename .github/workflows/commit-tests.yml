@@ -22,7 +22,10 @@ jobs:
       run: go build -v ./...
 
     - name: Test
-      run: go test -v ./...
-    
+      run: |
+        go test -race -v ./...
+        chmod +x coveralls.bash
+        ./coveralls.bash
+
     - name: Install
       run: go install .
