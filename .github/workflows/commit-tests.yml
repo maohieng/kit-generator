@@ -24,6 +24,9 @@ jobs:
     - name: Test
       run: |
         go test -race -v ./...
+        go install github.com/modocache/gover@latest
+        go install github.com/mattn/goveralls@latest
+        go install github.com/Masterminds/glide@latest
         chmod +x coveralls.bash
         ./coveralls.bash
 
