@@ -1137,7 +1137,7 @@ func (g *generateGRPCTransport) Generate() (err error) {
 				n,
 				jen.Id(stp).Id("*grpcServer"),
 				[]jen.Code{
-					jen.Id("ctx").Qual("golang.org/x/net/context", "Context"),
+					jen.Id("ctx").Qual("context", "Context"),
 					jen.Id("req").Id("*").Qual(pbImport, n+"Request"),
 				},
 				[]jen.Code{
