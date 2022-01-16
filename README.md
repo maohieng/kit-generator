@@ -27,11 +27,15 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 # Installation
 Before you install please read [prerequisites](#prerequisites)
 ```bash
-git clone https://github.com/GrantZheng/kit.git
-cd kit
-go install 
+# in the go1.17 or latest
+go install github.com/GrantZheng/kit@latest
+
+# go version =< go1.16 
+go install github.com/GrantZheng/kit
+# or
+go get -u github.com/GrantZheng/kit
 ```
-:warning: **Notice**: to install package, do not use `go get github.com/GrantZheng/kit`, which could generate kit binary refers to the original repo code. Some methods have been discussed [here](https://stackoverflow.com/questions/54721986/issues-with-go-build-on-forked-repository)，but I haven't found a better way to solve this problem.
+
 
 # Usage
 ```bash
@@ -40,7 +44,7 @@ kit help
 
 Also read this [medium story](https://medium.com/@kujtimii.h/creating-a-todo-app-using-gokit-cli-20f066a58e1)
 # Create a new service
-The kit tool use modules to manage dependencies by default, please make sure your go version >= 1.3, or
+The kit tool use [Go Module](https://go.dev/doc/modules/managing-dependencies) to manage dependencies by default, please make sure your go version >= 1.3, or
 GO111MODULE is set on. If you want to specify the module name, you should use the --module flag, otherwise, the module name in the go.mod file will be set as your project name.
 ```bash
 kit new service --help
