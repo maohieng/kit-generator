@@ -1,11 +1,10 @@
 package generator
 
 import (
+	"bytes"
 	"fmt"
 	"path"
 	"strings"
-
-	"bytes"
 
 	"os/exec"
 
@@ -707,8 +706,14 @@ func (g *generateGRPCTransportProto) Generate() (err error) {
 			&proto.Package{
 				Name: "pb",
 			},
+			&proto.Option{
+				Comment:  nil,
+				Name:     "go_package",
+				Constant: proto.Literal{Source: fmt.Sprintf(`"%s"`, g.destPath)},
+			},
 			svc,
 		)
+
 	} else {
 		s := g.getService()
 		if s == nil {
@@ -729,8 +734,14 @@ func (g *generateGRPCTransportProto) Generate() (err error) {
 		g.pbFilePath = path.Join(viper.GetString("gk_folder"), g.pbFilePath)
 	}
 	if !viper.GetBool("gk_testing") {
-		cmd := exec.Command("protoc", g.pbFilePath, "--go_out=plugins=grpc:.")
+		cmd := exec.Command("protoc",
+			"--go_out=.", "--go_opt=paths=source_relative",
+			"--go-grpc_out=.", "--go-grpc_opt=paths=source_relative",
+			g.pbFilePath)
 		cmd.Stdout = os.Stdout
+		// In case there is an error in protoc, user can receive error, otherwise,
+		// they can only receive "ERRO[0000] exit status 1". see issue #18
+		cmd.Stderr = os.Stderr
 		err = cmd.Run()
 		if err != nil {
 			return err
@@ -748,13 +759,14 @@ func (g *generateGRPCTransportProto) Generate() (err error) {
 			fmt.Sprintf(`:: Install proto3.
 :: https://github.com/google/protobuf/releases
 :: Update protoc Go bindings via
-::  go get -u github.com/golang/protobuf/proto
-::  go get -u github.com/golang/protobuf/protoc-gen-go
+::  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+::  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ::
 :: See also
 ::  https://github.com/grpc/grpc-go/tree/master/examples
 
-protoc %s.proto --go_out=plugins=grpc:.`, g.name),
+protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative %s`, g.name),
 			false,
 		)
 	}
@@ -769,12 +781,13 @@ protoc %s.proto --go_out=plugins=grpc:.`, g.name),
 #  ./autogen.sh ; ./configure ; make ; make install
 #
 # Update protoc Go bindings via
-#  go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
-#
+#  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+#  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 # See also
 #  https://github.com/grpc/grpc-go/tree/master/examples
 
-protoc %s.proto --go_out=plugins=grpc:.`, g.name),
+protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative %s`, g.name),
 			false,
 		)
 	}
@@ -794,12 +807,14 @@ protoc %s.proto --go_out=plugins=grpc:.`, g.name),
 # sudo ldconfig # refresh shared library cache.
 #
 # Update protoc Go bindings via
-#  go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+#  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+#  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 #
 # See also
 #  https://github.com/grpc/grpc-go/tree/master/examples
 
-protoc %s.proto --go_out=plugins=grpc:.`, g.name),
+protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative %s`, g.name),
 		false,
 	)
 }
@@ -940,6 +955,7 @@ func (g *generateGRPCTransportBase) Generate() (err error) {
 			}
 			fields = append(fields, jen.Id(n).Qual("github.com/go-kit/kit/transport/grpc", "Handler"))
 		}
+		fields = append(fields, jen.Id("").Qual(pbImport, "Unimplemented"+utils.ToCamelCase(g.name)+"Server"))
 	} else {
 		for _, m := range g.serviceInterface.Methods {
 			n := utils.ToLowerFirstCamelCase(m.Name)
