@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/kujtimiihoxha/kit/generator"
-	"github.com/kujtimiihoxha/kit/utils"
+	"github.com/GrantZheng/kit/generator"
+	"github.com/GrantZheng/kit/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
