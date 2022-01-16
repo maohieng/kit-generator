@@ -61,8 +61,8 @@ package service
 
 // HelloService describes the service.
 type HelloService interface {
- // Add your methods here
- // e.x: Foo(ctx context.Context,s string)(rs string, err error)
+    // Add your methods here
+    // e.x: Foo(ctx context.Context,s string)(rs string, err error)
 }
 ```
 When you are generating the service and the client library, the module name in the go.mod file could be autodetected.
@@ -101,25 +101,25 @@ This will generate the client library :sparkles: `http/client/http/http.go` that
 package main
 
 import (
- "context"
- "fmt"
+    "context"
+    "fmt"
 
- client "hello/client/http"
- "github.com/go-kit/kit/transport/http"
+    client "hello/client/http"
+    "github.com/go-kit/kit/transport/http"
 )
 
 func main() {
- svc, err := client.New("http://localhost:8081", map[string][]http.ClientOption{})
- if err != nil {
-  panic(err)
- }
+    svc, err := client.New("http://localhost:8081", map[string][]http.ClientOption{})
+    if err != nil {
+        panic(err)
+    }
 
- r, err := svc.Foo(context.Background(), "hello")
- if err != nil {
-  fmt.Println("Error:", err)
-  return
- }
- fmt.Println("Result:", r)
+    r, err := svc.Foo(context.Background(), "hello")
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    fmt.Println("Result:", r)
 }
 ```
 # Generate new middleware
