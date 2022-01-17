@@ -2,24 +2,21 @@ package generator
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 	"path"
+	"runtime"
 	"strings"
 
-	"os/exec"
-
-	"os"
-
-	"runtime"
-
-	"errors"
-
+	"github.com/GrantZheng/kit/fs"
+	grpcTemplate "github.com/GrantZheng/kit/generator/template/grpc"
+	"github.com/GrantZheng/kit/parser"
+	"github.com/GrantZheng/kit/utils"
 	"github.com/dave/jennifer/jen"
 	"github.com/emicklei/proto"
 	"github.com/emicklei/proto-contrib/pkg/protofmt"
-	"github.com/GrantZheng/kit/fs"
-	"github.com/GrantZheng/kit/parser"
-	"github.com/GrantZheng/kit/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -756,65 +753,20 @@ func (g *generateGRPCTransportProto) Generate() (err error) {
 	if runtime.GOOS == "windows" {
 		return g.fs.WriteFile(
 			g.compileFilePath,
-			fmt.Sprintf(`:: Install proto3.
-:: https://github.com/google/protobuf/releases
-:: Update protoc Go bindings via
-::  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-::  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-::
-:: See also
-::  https://github.com/grpc/grpc-go/tree/master/examples
-
-protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative %s`, g.name),
+			grpcTemplate.WindowsScriptText(g.name),
 			false,
 		)
 	}
 	if runtime.GOOS == "darwin" {
 		return g.fs.WriteFile(
 			g.compileFilePath,
-			fmt.Sprintf(`#!/usr/bin/env sh
-
-# Install proto3 from source macOS only.
-#  brew install autoconf automake libtool
-#  git clone https://github.com/google/protobuf
-#  ./autogen.sh ; ./configure ; make ; make install
-#
-# Update protoc Go bindings via
-#  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-#  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-# See also
-#  https://github.com/grpc/grpc-go/tree/master/examples
-
-protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative %s`, g.name),
+			grpcTemplate.DarwinScriptText(g.name),
 			false,
 		)
 	}
 	return g.fs.WriteFile(
 		g.compileFilePath,
-		fmt.Sprintf(`#!/usr/bin/env sh
-
-# Install proto3
-# sudo apt-get install -y git autoconf automake libtool curl make g++ unzip
-# git clone https://github.com/google/protobuf.git
-# cd protobuf/
-# ./autogen.sh
-# ./configure
-# make
-# make check
-# sudo make install
-# sudo ldconfig # refresh shared library cache.
-#
-# Update protoc Go bindings via
-#  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-#  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-#
-# See also
-#  https://github.com/grpc/grpc-go/tree/master/examples
-
-protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative %s`, g.name),
+		grpcTemplate.ScriptText(g.name),
 		false,
 	)
 }
