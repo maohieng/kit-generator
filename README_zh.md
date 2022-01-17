@@ -1,6 +1,6 @@
 # GoKit CLI  [![Build Status](https://github.com/GrantZheng/kit/workflows/Go/badge.svg)](https://github.com/GrantZheng/kit/actions)[![Go Report Card](https://goreportcard.com/badge/github.com/GrantZheng/kit)](https://goreportcard.com/report/github.com/GrantZheng/kit)[![Coverage Status](https://coveralls.io/repos/github/GrantZheng/kit/badge.svg?branch=master)](https://coveralls.io/github/GrantZheng/kit?branch=master)
 
-translate to: [Englist](./README.md) | 简体中文
+translate to: [English](./README.md) | 简体中文  
 
 
 本项目fork自[kit](https://github.com/kujtimiihoxha/kit)，并计划在将来维护它。kit是一个优秀的工具，并在我们的团队中得到广泛应用。一些功能和bug已经完成并修复，例如支持go module，替换一些旧的依赖项等，欢迎各位开发者提供建议。

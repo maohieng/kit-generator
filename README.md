@@ -1,4 +1,7 @@
 # GoKit CLI  [![Build Status](https://github.com/GrantZheng/kit/workflows/Go/badge.svg)](https://github.com/GrantZheng/kit/actions)[![Go Report Card](https://goreportcard.com/badge/github.com/GrantZheng/kit)](https://goreportcard.com/report/github.com/GrantZheng/kit)[![Coverage Status](https://coveralls.io/repos/github/GrantZheng/kit/badge.svg?branch=master)](https://coveralls.io/github/GrantZheng/kit?branch=master)
+
+translate to: English | [简体中文](./README_zh.md)  
+
 I fork the project from [kit](https://github.com/kujtimiihoxha/kit) and plan to maintain it in the future. The kit tool is a great job, and deeply used in our team. Some features and bugs have been done and fixed, such as supporting go module,replacing some old dependencies and so on. I am very glad to receive recommend about it.
 
 This project is a more advanced version of [gk](https://github.com/kujtimiihoxha/gk).
