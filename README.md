@@ -1,4 +1,7 @@
 # GoKit CLI  [![Build Status](https://github.com/GrantZheng/kit/workflows/Go/badge.svg)](https://github.com/GrantZheng/kit/actions)[![Go Report Card](https://goreportcard.com/badge/github.com/GrantZheng/kit)](https://goreportcard.com/report/github.com/GrantZheng/kit)[![Coverage Status](https://coveralls.io/repos/github/GrantZheng/kit/badge.svg?branch=master)](https://coveralls.io/github/GrantZheng/kit?branch=master)
+
+translate to: English | [简体中文](./README_zh.md)  
+
 I fork the project from [kit](https://github.com/kujtimiihoxha/kit) and plan to maintain it in the future. The kit tool is a great job, and deeply used in our team. Some features and bugs have been done and fixed, such as supporting go module,replacing some old dependencies and so on. I am very glad to receive recommend about it.
 
 This project is a more advanced version of [gk](https://github.com/kujtimiihoxha/gk).
@@ -27,11 +30,15 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 # Installation
 Before you install please read [prerequisites](#prerequisites)
 ```bash
-git clone https://github.com/GrantZheng/kit.git
-cd kit
-go install 
+# in the go1.17 or latest
+go install github.com/GrantZheng/kit@latest
+
+# go version =< go1.16 
+go install github.com/GrantZheng/kit
+# or
+go get -u github.com/GrantZheng/kit
 ```
-:warning: **Notice**: to install package, do not use `go get github.com/GrantZheng/kit`, which could generate kit binary refers to the original repo code. Some methods have been discussed [here](https://stackoverflow.com/questions/54721986/issues-with-go-build-on-forked-repository)，but I haven't found a better way to solve this problem.
+
 
 # Usage
 ```bash
@@ -40,7 +47,7 @@ kit help
 
 Also read this [medium story](https://medium.com/@kujtimii.h/creating-a-todo-app-using-gokit-cli-20f066a58e1)
 # Create a new service
-The kit tool use modules to manage dependencies by default, please make sure your go version >= 1.3, or
+The kit tool use [Go Module](https://go.dev/doc/modules/managing-dependencies) to manage dependencies by default, please make sure your go version >= 1.3, or
 GO111MODULE is set on. If you want to specify the module name, you should use the --module flag, otherwise, the module name in the go.mod file will be set as your project name.
 ```bash
 kit new service --help
