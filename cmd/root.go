@@ -10,10 +10,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+const version = "v1.1.2"
+
 // RootCmd is the root command of kit
 var RootCmd = &cobra.Command{
-	Use:   "kit",
-	Short: "Go-Kit CLI",
+	Use:     "kit",
+	Short:   "Go-Kit CLI",
+	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},

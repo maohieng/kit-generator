@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"os/exec"
 	"path"
+	"runtime"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
 	"github.com/GrantZheng/kit/fs"
 	"github.com/GrantZheng/kit/utils"
+	"github.com/dave/jennifer/jen"
 	"github.com/spf13/viper"
 )
 
@@ -78,7 +79,12 @@ func (g *NewService) genModule() error {
 		moduleName = strings.Join(moduleNameSlice, "/")
 	}
 	cmdStr := "cd " + prjName + " && go mod init " + moduleName
-	cmd := exec.Command("sh", "-c", cmdStr)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/C", cmdStr)
+	} else {
+		cmd = exec.Command("sh", "-c", cmdStr)
+	}
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -86,6 +92,9 @@ func (g *NewService) genModule() error {
 	_, err := cmd.Output()
 	// return cmd.Stderr to debug (err here provides nothing useful, only `exit status 1`)
 	if err != nil {
+		if runtime.GOOS == "windows" {
+			return fmt.Errorf("genModule: %s => err:%v", cmdStr, err.Error()+" , "+stderr.String())
+		}
 		return fmt.Errorf("genModule: sh -c %s => err:%v", cmdStr, err.Error()+" , "+stderr.String())
 	}
 	return nil
