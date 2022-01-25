@@ -93,7 +93,7 @@ func (g *NewService) genModule() error {
 	// return cmd.Stderr to debug (err here provides nothing useful, only `exit status 1`)
 	if err != nil {
 		if runtime.GOOS == "windows" {
-			return fmt.Errorf("genModule: %s => err:%v", cmdStr, err.Error()+" , "+stderr.String())
+			return fmt.Errorf("genModule: cmd /C %s => err:%v", cmdStr, err.Error()+" , "+stderr.String())
 		}
 		return fmt.Errorf("genModule: sh -c %s => err:%v", cmdStr, err.Error()+" , "+stderr.String())
 	}
