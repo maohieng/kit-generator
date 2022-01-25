@@ -46,8 +46,8 @@ func checkProtoc() bool {
 				`Install proto3.
 https://github.com/google/protobuf/releases
 Update protoc Go bindings via
-> go get -u github.com/golang/protobuf/proto
-> go get -u github.com/golang/protobuf/protoc-gen-go
+> go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+> go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
 See also
 https://github.com/grpc/grpc-go/tree/master/examples`,
@@ -60,7 +60,8 @@ https://github.com/grpc/grpc-go/tree/master/examples`,
 > ./autogen.sh ; ./configure ; make ; make install
 
 Update protoc Go bindings via
-> go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+> go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+> go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
 See also
 https://github.com/grpc/grpc-go/tree/master/examples`,
