@@ -45,7 +45,7 @@ go get -u github.com/GrantZheng/kit
 kit help
 ```
 
-Also read this [medium story](https://medium.com/@kujtimii.h/creating-a-todo-app-using-gokit-cli-20f066a58e1)
+Also read this [medium story](docs/qiuck-start/creating_a_todo_app_using_gokit-cli.md)
 # Create a new service
 The kit tool use [Go Module](https://go.dev/doc/modules/managing-dependencies) to manage dependencies by default, please make sure your go version >= 1.3, or
 GO111MODULE is set on. If you want to specify the module name, you should use the --module flag, otherwise, the module name in the go.mod file will be set as your project name.
