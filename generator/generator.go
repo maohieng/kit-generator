@@ -12,10 +12,10 @@ import (
 	"bytes"
 	"go/format"
 
-	"github.com/dave/jennifer/jen"
 	"github.com/GrantZheng/kit/fs"
 	"github.com/GrantZheng/kit/parser"
 	"github.com/GrantZheng/kit/utils"
+	"github.com/dave/jennifer/jen"
 	"github.com/sirupsen/logrus"
 )
 
@@ -117,7 +117,7 @@ func (b *BaseGenerator) EnsureThatWeUseQualifierIfNeeded(tp string, imp []parser
 func (b *BaseGenerator) AddImportsToFile(imp []parser.NamedTypeValue, src string) (string, error) {
 	// Create the AST by parsing src
 	fset := token.NewFileSet()
-	f, err := ps.ParseFile(fset, "", src, 0)
+	f, err := ps.ParseFile(fset, "", src, ps.ParseComments)
 	if err != nil {
 		return "", err
 	}

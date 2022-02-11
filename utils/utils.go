@@ -8,8 +8,8 @@ import (
 
 	"fmt"
 
-	"github.com/alioygur/godash"
 	"github.com/GrantZheng/kit/fs"
+	"github.com/alioygur/godash"
 	"github.com/spf13/viper"
 	"golang.org/x/tools/imports"
 )
@@ -50,7 +50,7 @@ func ToCamelCase(s string) string {
 // GoImportsSource is used to format and optimize imports the
 // given source.
 func GoImportsSource(path string, s string) (string, error) {
-	is, err := imports.Process(path, []byte(s), nil)
+	is, err := imports.Process(path, []byte(s), &imports.Options{Comments: true})
 	return string(is), err
 }
 
