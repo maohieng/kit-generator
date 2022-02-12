@@ -52,7 +52,7 @@ go get -u github.com/GrantZheng/kit
 kit help
 ```
 
-或查看[这篇文章](https://medium.com/@kujtimii.h/creating-a-todo-app-using-gokit-cli-20f066a58e1)
+或查看[这篇文章](docs/qiuck-start/creating_a_todo_app_using_gokit-cli.md)
 # Create a new service
 `gokit cli`默认使用[Go Module](https://go.dev/doc/modules/managing-dependencies)来管理依赖，请确保你的Go版本 >= 1.3, 或启用GO111MODULE. 如果你想指定module名, 你可以使用 `--module` 选项, 否则 `go.mod`里的模组名将被设置为项目名.
 ```bash
