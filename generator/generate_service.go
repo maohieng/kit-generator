@@ -345,7 +345,7 @@ func (g *generateServiceMiddleware) Generate() error {
 		if !strFound {
 			g.code.appendStruct(
 				"loggingMiddleware",
-				jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+				jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 				jen.Id("next").Id(g.interfaceName),
 			)
 		}
@@ -378,7 +378,7 @@ func (g *generateServiceMiddleware) Generate() error {
 				"LoggingMiddleware",
 				nil,
 				[]jen.Code{
-					jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+					jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 				},
 				[]jen.Code{},
 				"Middleware",
@@ -1127,7 +1127,7 @@ func (g *generateEndpointMiddleware) Generate() (err error) {
 			"LoggingMiddleware",
 			nil,
 			[]jen.Code{
-				jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+				jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 			},
 			[]jen.Code{},
 			"endpoint.Middleware",
@@ -1331,7 +1331,7 @@ func (g *generateCmdBase) Generate() (err error) {
 			"defaultHttpOptions",
 			nil,
 			[]jen.Code{
-				jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+				jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 				jen.Id("tracer").Qual("github.com/opentracing/opentracing-go", "Tracer"),
 			},
 			[]jen.Code{
@@ -1375,7 +1375,7 @@ func (g *generateCmdBase) Generate() (err error) {
 			"defaultGRPCOptions",
 			nil,
 			[]jen.Code{
-				jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+				jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 				jen.Id("tracer").Qual("github.com/opentracing/opentracing-go", "Tracer"),
 			},
 			[]jen.Code{
@@ -1423,7 +1423,7 @@ func (g *generateCmdBase) Generate() (err error) {
 			"addDefaultEndpointMiddleware",
 			nil,
 			[]jen.Code{
-				jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+				jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 				jen.Id("duration").Id("*").Qual("github.com/go-kit/kit/metrics/prometheus", "Summary"),
 				jen.Id("mw").Map(jen.String()).Index().Qual("github.com/go-kit/kit/endpoint", "Middleware"),
 			},
@@ -1438,7 +1438,7 @@ func (g *generateCmdBase) Generate() (err error) {
 			"addDefaultServiceMiddleware",
 			nil,
 			[]jen.Code{
-				jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+				jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 				jen.Id("mw").Index().Qual(serviceImport, "Middleware"),
 			},
 			[]jen.Code{
@@ -1662,18 +1662,18 @@ func (g *generateCmd) generateRun() (*PartialGenerator, error) {
 	pg := NewPartialGenerator(nil)
 	pg.Raw().Id("fs").Dot("Parse").Call(jen.Qual("os", "Args").Index(jen.Lit(1), jen.Empty()))
 	pg.Raw().Line().Line().Comment("Create a single logger, which we'll use and give to other components.").Line()
-	pg.Raw().Id("logger").Op("=").Qual("github.com/go-kit/kit/log", "NewLogfmtLogger").Call(
+	pg.Raw().Id("logger").Op("=").Qual("github.com/go-kit/log", "NewLogfmtLogger").Call(
 		jen.Qual("os", "Stderr"),
 	).Line()
-	pg.Raw().Id("logger").Op("=").Qual("github.com/go-kit/kit/log", "With").Call(
+	pg.Raw().Id("logger").Op("=").Qual("github.com/go-kit/log", "With").Call(
 		jen.Id("logger"),
 		jen.Lit("ts"),
-		jen.Qual("github.com/go-kit/kit/log", "DefaultTimestampUTC"),
+		jen.Qual("github.com/go-kit/log", "DefaultTimestampUTC"),
 	).Line()
-	pg.Raw().Id("logger").Op("=").Qual("github.com/go-kit/kit/log", "With").Call(
+	pg.Raw().Id("logger").Op("=").Qual("github.com/go-kit/log", "With").Call(
 		jen.Id("logger"),
 		jen.Lit("caller"),
-		jen.Qual("github.com/go-kit/kit/log", "DefaultCaller"),
+		jen.Qual("github.com/go-kit/log", "DefaultCaller"),
 	).Line().Line()
 	pg.appendMultilineComment(
 		[]string{
@@ -1795,7 +1795,7 @@ func (g *generateCmd) generateRun() (*PartialGenerator, error) {
 func (g *generateCmd) generateVars() {
 	if g.generateFirstTime {
 		g.code.Raw().Var().Id("tracer").Qual("github.com/opentracing/opentracing-go", "Tracer").Line()
-		g.code.Raw().Var().Id("logger").Qual("github.com/go-kit/kit/log", "Logger").Line()
+		g.code.Raw().Var().Id("logger").Qual("github.com/go-kit/log", "Logger").Line()
 		g.code.appendMultilineComment(
 			[]string{
 				"Define our flags. Your service probably won't need to bind listeners for",
@@ -2055,7 +2055,7 @@ func (g *generateCmd) generateGetMiddleware() (err error) {
 		"getServiceMiddleware",
 		nil,
 		[]jen.Code{
-			jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+			jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 		},
 		[]jen.Code{
 			jen.Id("mw").Index().Qual(svcImport, "Middleware"),
@@ -2098,7 +2098,7 @@ func (g *generateCmd) generateGetMiddleware() (err error) {
 		"getEndpointMiddleware",
 		nil,
 		[]jen.Code{
-			jen.Id("logger").Qual("github.com/go-kit/kit/log", "Logger"),
+			jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
 		},
 		[]jen.Code{
 			jen.Id("mw").Map(jen.String()).Index().Qual(
