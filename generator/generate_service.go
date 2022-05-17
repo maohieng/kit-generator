@@ -5,10 +5,10 @@ import (
 	"path"
 	"strings"
 
-	"github.com/dave/jennifer/jen"
 	"github.com/GrantZheng/kit/fs"
 	"github.com/GrantZheng/kit/parser"
 	"github.com/GrantZheng/kit/utils"
+	"github.com/dave/jennifer/jen"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -1238,7 +1238,7 @@ func (g *generateCmdBase) Generate() (err error) {
 	}
 	cd := []jen.Code{
 		jen.Id("g").Op("=").Id("&").Qual(
-			"github.com/oklog/oklog/pkg/group", "Group",
+			"github.com/oklog/run", "Group",
 		).Block(),
 	}
 	if existingHTTP {
@@ -1271,7 +1271,7 @@ func (g *generateCmdBase) Generate() (err error) {
 			jen.Id("endpoints").Qual(endpointImport, "Endpoints"),
 		},
 		[]jen.Code{
-			jen.Id("g").Id("*").Qual("github.com/oklog/oklog/pkg/group", "Group"),
+			jen.Id("g").Id("*").Qual("github.com/oklog/run", "Group"),
 		},
 		"",
 		cd...,
@@ -1936,7 +1936,7 @@ func (g *generateCmd) generateInitHTTP() (err error) {
 		nil,
 		[]jen.Code{
 			jen.Id("endpoints").Qual(epImport, "Endpoints"),
-			jen.Id("g").Id("*").Qual("github.com/oklog/oklog/pkg/group", "Group"),
+			jen.Id("g").Id("*").Qual("github.com/oklog/run", "Group"),
 		},
 		[]jen.Code{},
 		"",
@@ -2019,7 +2019,7 @@ func (g *generateCmd) generateInitGRPC() (err error) {
 		nil,
 		[]jen.Code{
 			jen.Id("endpoints").Qual(epImport, "Endpoints"),
-			jen.Id("g").Id("*").Qual("github.com/oklog/oklog/pkg/group", "Group"),
+			jen.Id("g").Id("*").Qual("github.com/oklog/run", "Group"),
 		},
 		[]jen.Code{},
 		"",
@@ -2118,7 +2118,7 @@ func (g *generateCmd) generateDefaultMetrics() {
 			"initMetricsEndpoint",
 			nil,
 			[]jen.Code{
-				jen.Id("g").Id("*").Qual("github.com/oklog/oklog/pkg/group", "Group"),
+				jen.Id("g").Id("*").Qual("github.com/oklog/run", "Group"),
 			},
 			[]jen.Code{},
 			"",
@@ -2171,7 +2171,7 @@ func (g *generateCmd) generateCancelInterrupt() {
 			"initCancelInterrupt",
 			nil,
 			[]jen.Code{
-				jen.Id("g").Id("*").Qual("github.com/oklog/oklog/pkg/group", "Group"),
+				jen.Id("g").Id("*").Qual("github.com/oklog/run", "Group"),
 			},
 			[]jen.Code{},
 			"",
