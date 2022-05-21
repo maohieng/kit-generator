@@ -1301,7 +1301,7 @@ func (g *generateCmdBase) Generate() (err error) {
 
 					pt = append(
 						pt,
-						jen.Qual("github.com/go-kit/kit/transport/http", "ServerErrorLogger").Call(jen.Id("logger")),
+						jen.Qual("github.com/go-kit/kit/transport/http", "ServerErrorHandler").Call(jen.Qual("github.com/go-kit/kit/transport", "NewLogErrorHandler").Call(jen.Id("logger"))),
 						jen.Qual("github.com/go-kit/kit/transport/http", "ServerBefore").Call(
 							jen.Qual("github.com/go-kit/kit/tracing/opentracing", "HTTPToContext").Call(
 								jen.Id("tracer"),
@@ -1350,7 +1350,7 @@ func (g *generateCmdBase) Generate() (err error) {
 					opt[jen.Lit(v.Name)] =
 						jen.Values(
 							jen.List(
-								jen.Qual("github.com/go-kit/kit/transport/grpc", "ServerErrorLogger").Call(jen.Id("logger")),
+								jen.Qual("github.com/go-kit/kit/transport/grpc", "ServerErrorHandler").Call(jen.Qual("github.com/go-kit/kit/transport", "NewLogErrorHandler").Call(jen.Id("logger"))),
 								jen.Qual("github.com/go-kit/kit/transport/grpc", "ServerBefore").Call(
 									jen.Qual("github.com/go-kit/kit/tracing/opentracing", "GRPCToContext").Call(
 										jen.Id("tracer"),
