@@ -238,10 +238,10 @@ func (g *generateHTTPTransport) Generate() (err error) {
 	errorEncoderFound := false
 	err2codeFound := false
 	errorDecoderFound := false
-	errorWrapperFound := false
+	errorBodyFound := false
 	for _, m := range g.file.Structures {
-		if m.Name == "errorWrapper" {
-			errorWrapperFound = true
+		if m.Name == "errorBody" {
+			errorBodyFound = true
 		}
 	}
 	for _, m := range g.serviceInterface.Methods {
@@ -430,7 +430,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				"",
 				jen.Id("w").Dot("WriteHeader").Call(jen.Id("err2code").Call(jen.Err())),
 				jen.Qual("encoding/json", "NewEncoder").Call(jen.Id("w")).Dot("Encode").Call(
-					jen.Id("errorWrapper").Values(
+					jen.Id("errorBody").Values(
 						jen.Dict{
 							jen.Id("Error"): jen.Err().Dot("Error").Call(),
 						},
@@ -448,7 +448,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				},
 				[]jen.Code{},
 				"error",
-				jen.Var().Id("w").Id("errorWrapper"),
+				jen.Var().Id("w").Id("errorBody"),
 				jen.If(
 					jen.Err().Op(":=").Qual("encoding/json", "NewDecoder").Call(
 						jen.Id("r").Dot("Body"),
@@ -477,12 +477,15 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				},
 				[]jen.Code{},
 				"int",
-				jen.Return(jen.Qual("net/http", "StatusInternalServerError")),
+				//jen.Return(jen.Qual("net/http", "StatusInternalServerError")),
+				jen.Return(jen.Qual("vgo.com/lib/errors", "Kinds").Call(
+					jen.Id("err"),
+				).Dot("HTTPCode").Call()),
 			)
 			g.code.NewLine()
 		}
-		if !errorWrapperFound {
-			g.code.Raw().Type().Id("errorWrapper").Struct(
+		if !errorBodyFound {
+			g.code.Raw().Type().Id("errorBody").Struct(
 				jen.Id("Error").String().Tag(
 					map[string]string{
 						"json": "error",
@@ -610,7 +613,8 @@ func (g *generateHTTPTransportBase) Generate() (err error) {
 	var body []jen.Code
 	if g.gorillaMux {
 		body = append([]jen.Code{
-			jen.Id("m").Op(":=").Qual("github.com/gorilla/mux", "NewRouter").Call()}, handles...)
+			jen.Id("m").Op(":=").Qual("github.com/gorilla/mux", "NewRouter").Call().Dot("PathPrefix").Call(jen.Lit("/api/v1")).Dot("Subrouter").Call(),
+		}, handles...)
 	} else {
 		body = append([]jen.Code{
 			jen.Id("m").Op(":=").Qual("net/http", "NewServeMux").Call()}, handles...)

@@ -1,4 +1,4 @@
-# GoKit CLI  [![Build Status](https://github.com/GrantZheng/kit/workflows/Go/badge.svg)](https://github.com/GrantZheng/kit/actions)[![Go Report Card](https://goreportcard.com/badge/github.com/GrantZheng/kit)](https://goreportcard.com/report/github.com/GrantZheng/kit)[![Coverage Status](https://coveralls.io/repos/github/GrantZheng/kit/badge.svg?branch=master)](https://coveralls.io/github/GrantZheng/kit?branch=master)
+# GoKit CLI  [![Build Status](https://github.com/maohieng/kit-generator/workflows/Go/badge.svg)](https://github.com/maohieng/kit-generator/actions)[![Go Report Card](https://goreportcard.com/badge/github.com/maohieng/kit-generator)](https://goreportcard.com/report/github.com/maohieng/kit-generator)[![Coverage Status](https://coveralls.io/repos/github/GrantZheng/kit/badge.svg?branch=master)](https://coveralls.io/github/GrantZheng/kit?branch=master)
 
 translate to: [English](./README.md) | 简体中文  
 
@@ -37,12 +37,12 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 
 ```bash
 # in the go1.17 or latest
-go install github.com/GrantZheng/kit@latest
+go install github.com/maohieng/kit-generator@latest
 
 # go version =< go1.16 
-go install github.com/GrantZheng/kit
+go install github.com/maohieng/kit-generator
 # or
-go get -u github.com/GrantZheng/kit
+go get -u github.com/maohieng/kit-generator
 ```
 
 
