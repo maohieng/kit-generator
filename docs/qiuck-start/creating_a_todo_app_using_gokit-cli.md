@@ -121,12 +121,18 @@ type TodoService interface {
 This is all that `kit` needs to create the service.
 
 ```shell
-kit g s todo -w --gorilla
+kitg g s todo -w --gorilla
+```
+or
+```shell
+kitg g s todo -w --httprouter
 ```
 
 `-w` generate some default service middleware.
 
 `--gorilla` use [gorilla/mux](https://github.com/gorilla/mux) instead of the default http handler for the http transport.
+
+`--httprouter` use [julienschmidt/httprouter](https://github.com/julienschmidt/httprouter) instead of the default http handler for the http transport.
 
 `kit` will generate the following file structure
 
@@ -559,7 +565,11 @@ type TodoService interface {
 Then run:
 
 ```shell
-kit g s todo --gorilla -w
+kitg g s todo --gorilla -w
+```
+or
+```shell
+kitg g s todo --httprouter -w
 ```
 
 `kit` will then create everything that is missing for the new endpoint and recreate the `_gen` files, this will not override any change you made in the non `_gen` files.

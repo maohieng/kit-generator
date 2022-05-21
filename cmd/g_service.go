@@ -55,6 +55,7 @@ var initserviceCmd = &cobra.Command{
 			pbImportPath,
 			smw,
 			viper.GetBool("g_s_gorilla"),
+			viper.GetBool("g_s_httprouter"),
 			emw,
 			methods,
 		)
@@ -71,6 +72,7 @@ func init() {
 	initserviceCmd.Flags().StringP("pb_import_path", "i", "", "Specify path to import pb")
 	initserviceCmd.Flags().BoolP("dmw", "w", false, "Generate default middleware for service and endpoint")
 	initserviceCmd.Flags().Bool("gorilla", false, "Generate http using gorilla mux")
+	initserviceCmd.Flags().Bool("httprouter", false, "Generate http using httprouter")
 	initserviceCmd.Flags().StringArrayVarP(&methods, "methods", "m", []string{}, "Specify methods to be generated")
 	initserviceCmd.Flags().Bool("svc-mdw", false, "If set a default Logging and Instrumental middleware will be created and attached to the service")
 	initserviceCmd.Flags().Bool("endpoint-mdw", false, "If set a default Logging and Tracking middleware will be created and attached to the endpoint")
@@ -79,6 +81,7 @@ func init() {
 	viper.BindPFlag("g_s_pb_import_path", initserviceCmd.Flags().Lookup("pb_import_path"))
 	viper.BindPFlag("g_s_dmw", initserviceCmd.Flags().Lookup("dmw"))
 	viper.BindPFlag("g_s_gorilla", initserviceCmd.Flags().Lookup("gorilla"))
+	viper.BindPFlag("g_s_httprouter", initserviceCmd.Flags().Lookup("httprouter"))
 	viper.BindPFlag("g_s_svc_mdw", initserviceCmd.Flags().Lookup("svc-mdw"))
 	viper.BindPFlag("g_s_endpoint_mdw", initserviceCmd.Flags().Lookup("endpoint-mdw"))
 }
