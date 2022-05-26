@@ -493,7 +493,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				[]jen.Code{},
 				"int",
 				//jen.Return(jen.Qual("net/http", "StatusInternalServerError")),
-				jen.Return(jen.Qual("github.com/maohieng/errors", "Kinds").Call(
+				jen.Return(jen.Qual("github.com/maohieng/errs", "Kinds").Call(
 					jen.Id("err"),
 				).Dot("HTTPCode").Call()),
 			)
