@@ -1538,6 +1538,7 @@ func (g *generateCmd) Generate() (err error) {
 		return err
 	}
 	g.generateVars()
+	g.generateInitFlagSet()
 	runFound := false
 	for _, v := range g.file.Methods {
 		if v.Name == "Run" {
@@ -1659,10 +1660,10 @@ func (g *generateCmd) Generate() (err error) {
 	}
 	return g.fs.WriteFile(g.filePath, s, true)
 }
+
 func (g *generateCmd) generateRun() (*PartialGenerator, error) {
 	pg := NewPartialGenerator(nil)
-	pg.Raw().Id("fs").Dot("Parse").Call(jen.Qual("os", "Args").Index(jen.Lit(1), jen.Empty()))
-	pg.Raw().Line().Line().Comment("Create a single logger, which we'll use and give to other components.").Line()
+	pg.Raw().Line().Comment("Create a single logger, which we'll use and give to other components.").Line()
 	pg.Raw().Id("logger").Op("=").Qual("github.com/go-kit/log", "NewLogfmtLogger").Call(
 		jen.Qual("os", "Stderr"),
 	).Line()
@@ -1676,6 +1677,13 @@ func (g *generateCmd) generateRun() (*PartialGenerator, error) {
 		jen.Lit("caller"),
 		jen.Qual("github.com/go-kit/log", "DefaultCaller"),
 	).Line().Line()
+
+	pg.Raw().Id("initFlagSet").Call().Line()
+	pg.Raw().Id("fs").Dot("Parse").Call(jen.Qual("os", "Args").Index(jen.Lit(1), jen.Empty())).
+		Line().Line()
+
+	pg.Raw().Id("logger").Dot("Log").Call(jen.Lit("TRANSPORT"), jen.Qual("vgo.com/lib/core", "AppTrans"))
+
 	pg.appendMultilineComment(
 		[]string{
 			" Determine which tracer to use. We'll pass the tracer to all the",
@@ -1810,21 +1818,13 @@ func (g *generateCmd) generateVars() {
 		g.code.NewLine()
 		g.code.Raw().Var().Id("debugAddr").Op("=").Id("fs").Dot("String").Call(
 			jen.Lit("debug-addr"),
-			jen.Lit(":8080"),
+			jen.Lit(":8082"),
 			jen.Lit("Debug and metrics listen address"),
 		)
 		g.code.NewLine()
-		g.code.Raw().Var().Id("httpAddr").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("http-addr"),
-			jen.Lit(":8081"),
-			jen.Lit("HTTP listen address"),
-		)
+		g.code.Raw().Var().Id("httpAddr").Id("*string")
 		g.code.NewLine()
-		g.code.Raw().Var().Id("grpcAddr").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("grpc-addr"),
-			jen.Lit(":8082"),
-			jen.Lit("gRPC listen address"),
-		)
+		g.code.Raw().Var().Id("grpcAddr").Id("*string")
 		g.code.NewLine()
 		g.code.Raw().Var().Id("thriftAddr").Op("=").Id("fs").Dot("String").Call(
 			jen.Lit("thrift-addr"),
@@ -1870,6 +1870,61 @@ func (g *generateCmd) generateVars() {
 		g.code.NewLine()
 	}
 }
+
+func (g *generateCmd) generateInitFlagSet() {
+	for _, v := range g.file.Methods {
+		if v.Name == "initFlagSet" {
+			return
+		}
+	}
+
+	pt := NewPartialGenerator(nil)
+	pt.Raw().Id("port").Op(":=").Qual("os", "Getenv").Call(jen.Lit("PORT")).Line()
+	pt.Raw().If(
+		jen.Id("port").Op("==").Lit("").Block(
+			jen.Id("port").Op("=").Lit("8080"),
+			jen.Id("logger").Dot("Log").Call(jen.Lit("port env"), jen.Lit("not specified, use 8080")),
+		),
+	).Line().Line()
+
+	pt.Raw().If(
+		jen.Qual("vgo.com/lib/core", "AppTrans").Op("==").Qual("vgo.com/lib/core", "HttpTransport").Block(
+			jen.Id("httpAddr").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("http-addr"),
+				jen.Qual("fmt", "Sprintf").Call(jen.Lit(":%s"), jen.Id("port")),
+				jen.Lit("HTTP listen address"),
+			),
+		),
+	).Else().If(
+		jen.Qual("vgo.com/lib/core", "AppTrans").Op("==").Qual("vgo.com/lib/core", "GrpcTransport").Block(
+			jen.Id("grpcAddr").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("grpc-addr"),
+				jen.Qual("fmt", "Sprintf").Call(jen.Lit(":%s"), jen.Id("port")),
+				jen.Lit("GRPC listen address"),
+			),
+		),
+	).Else().Block(
+		jen.Id("httpAddr").Op("=").Id("fs").Dot("String").Call(
+			jen.Lit("http-addr"),
+			jen.Lit(":8080"),
+			jen.Lit("HTTP listen address"),
+		),
+		jen.Id("grpcAddr").Op("=").Id("fs").Dot("String").Call(
+			jen.Lit("grpc-addr"),
+			jen.Lit(":8081"),
+			jen.Lit("GRPC listen address"),
+		),
+	).Line()
+	g.code.NewLine()
+	g.code.appendFunction("initFlagSet",
+		nil,
+		[]jen.Code{},
+		[]jen.Code{},
+		"",
+		pt.Raw())
+	g.code.NewLine()
+}
+
 func (g *generateCmd) generateInitHTTP() (err error) {
 	for _, v := range g.file.Methods {
 		if v.Name == "initHttpHandler" {
@@ -1887,6 +1942,12 @@ func (g *generateCmd) generateInitHTTP() (err error) {
 	}
 
 	pt := NewPartialGenerator(nil)
+
+	pt.Raw().If(
+		jen.Qual("vgo.com/lib/core", "AppTrans").
+			Op("==").Qual("vgo.com/lib/core", "GrpcTransport").Block(jen.Return()),
+	).Line().Line()
+
 	pt.Raw().Id("options").Op(":=").Id("defaultHttpOptions").Call(
 		jen.Id("logger"),
 		jen.Id("tracer"),
@@ -1966,6 +2027,12 @@ func (g *generateCmd) generateInitGRPC() (err error) {
 	}
 
 	pt := NewPartialGenerator(nil)
+
+	pt.Raw().If(
+		jen.Qual("vgo.com/lib/core", "AppTrans").
+			Op("==").Qual("vgo.com/lib/core", "HttpTransport").Block(jen.Return()),
+	).Line().Line()
+
 	pt.Raw().Id("options").Op(":=").Id("defaultGRPCOptions").Call(
 		jen.Id("logger"),
 		jen.Id("tracer"),
