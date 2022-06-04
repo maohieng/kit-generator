@@ -322,11 +322,14 @@ func (g *generateServiceMiddleware) Generate() error {
 		return err
 	}
 	tpFound := false
-	if g.file.FuncType.Name == "Middleware" {
-		if len(g.file.FuncType.Parameters) == 1 && len(g.file.FuncType.Results) == 1 {
-			if g.file.FuncType.Parameters[0].Type == g.serviceInterface.Name &&
-				g.file.FuncType.Results[0].Type == g.serviceInterface.Name {
-				tpFound = true
+	for _, ft := range g.file.FuncTypes {
+		if ft.Name == "Middleware" {
+			if len(ft.Parameters) == 1 && len(ft.Results) == 1 {
+				if ft.Parameters[0].Type == g.serviceInterface.Name &&
+					ft.Results[0].Type == g.serviceInterface.Name {
+					tpFound = true
+					break
+				}
 			}
 		}
 	}

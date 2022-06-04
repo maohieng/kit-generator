@@ -4,8 +4,8 @@ package parser
 type File struct {
 	Comment string
 	Package string
-	// Only used to get the middleware type
-	FuncType   FuncType
+	// Not only used to get the middleware type
+	FuncTypes  []FuncType
 	Imports    []NamedTypeValue
 	Constants  []NamedTypeValue
 	Vars       []NamedTypeValue
@@ -96,6 +96,15 @@ func NewStruct(name string, vars []NamedTypeValue) Struct {
 		Name:    name,
 		Comment: "",
 		Vars:    vars,
+	}
+}
+
+// NewFuncType creates a new func type.
+func NewFuncType(name string, params []NamedTypeValue, results []NamedTypeValue) FuncType {
+	return FuncType{
+		Name:       name,
+		Parameters: params,
+		Results:    results,
 	}
 }
 

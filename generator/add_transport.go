@@ -118,6 +118,11 @@ func (g *GenerateTransport) Generate() (err error) {
 		if err != nil {
 			return err
 		}
+		gg := newGenerateGRPCGenerics(g.name, g.pbImportPath, g.serviceInterface, g.methods)
+		err = gg.Generate()
+		if err != nil {
+			return err
+		}
 		logrus.Warn("===============================================================")
 		logrus.Warn("The GRPC implementation is not finished you need to update your")
 		logrus.Warn(" service proto buffer and run the compile script.")
@@ -1088,7 +1093,6 @@ func (g *generateGRPCTransport) Generate() (err error) {
 			g.code.appendMultilineComment([]string{
 				fmt.Sprintf("decode%sResponse is a transport/grpc.DecodeRequestFunc that converts a", m.Name),
 				fmt.Sprintf("gRPC request to a user-domain %s request.", m.Name),
-				"TODO implement the decoder",
 			})
 			g.code.NewLine()
 			g.code.appendFunction(
@@ -1104,9 +1108,7 @@ func (g *generateGRPCTransport) Generate() (err error) {
 				},
 				"",
 				jen.Return(
-					jen.Nil(), jen.Qual("errors", "New").Call(
-						jen.Lit(fmt.Sprintf("'%s' Decoder is not impelemented", utils.ToCamelCase(g.name))),
-					),
+					jen.Id("decodeRequest").Call(jen.Id("r"), jen.Id(fmt.Sprintf("decode%sRequestBody", m.Name))),
 				),
 			)
 			g.code.NewLine()
@@ -1115,7 +1117,6 @@ func (g *generateGRPCTransport) Generate() (err error) {
 			g.code.appendMultilineComment([]string{
 				fmt.Sprintf("encode%sResponse is a transport/grpc.EncodeResponseFunc that converts", m.Name),
 				"a user-domain response to a gRPC reply.",
-				"TODO implement the encoder",
 			})
 			g.code.NewLine()
 			g.code.appendFunction(
@@ -1131,9 +1132,7 @@ func (g *generateGRPCTransport) Generate() (err error) {
 				},
 				"",
 				jen.Return(
-					jen.Nil(), jen.Qual("errors", "New").Call(
-						jen.Lit(fmt.Sprintf("'%s' Encoder is not impelemented", utils.ToCamelCase(g.name))),
-					),
+					jen.Id("encodeResponse").Call(jen.Id("r"), jen.Id(fmt.Sprintf("encode%sResponseBody", m.Name))),
 				),
 			)
 			g.code.NewLine()
@@ -1169,6 +1168,387 @@ func (g *generateGRPCTransport) Generate() (err error) {
 						jen.Id("*").Qual(pbImport, n+"Reply"),
 					),
 					jen.Nil(),
+				),
+			)
+			g.code.NewLine()
+		}
+	}
+	if g.generateFirstTime {
+		return g.fs.WriteFile(g.filePath, g.srcFile.GoString(), true)
+	}
+	tmpSrc := g.srcFile.GoString()
+	src += "\n" + g.code.Raw().GoString()
+	f, err := parser.NewFileParser().Parse([]byte(tmpSrc))
+	if err != nil {
+		return err
+	}
+	// See if we need to add any new import
+	imp, err := g.getMissingImports(f.Imports, g.file)
+	if err != nil {
+		return err
+	}
+	if len(imp) > 0 {
+		src, err = g.AddImportsToFile(imp, src)
+		if err != nil {
+			return err
+		}
+	}
+	s, err := utils.GoImportsSource(g.destPath, src)
+	if err != nil {
+		return err
+	}
+	return g.fs.WriteFile(g.filePath, s, true)
+}
+
+type generateGRPCGeneric struct {
+	BaseGenerator
+	name              string
+	methods           []string
+	interfaceName     string
+	destPath          string
+	pbImportPath      string
+	generateFirstTime bool
+	file              *parser.File
+	filePath          string
+	serviceInterface  parser.Interface
+}
+
+func newGenerateGRPCGenerics(name, pbImportPath string, serviceInterface parser.Interface, methods []string) Gen {
+	t := &generateGRPCGeneric{
+		name:             name,
+		methods:          methods,
+		interfaceName:    utils.ToCamelCase(name + "Service"),
+		destPath:         fmt.Sprintf(viper.GetString("gk_grpc_path_format"), utils.ToLowerSnakeCase(name)),
+		serviceInterface: serviceInterface,
+	}
+	t.filePath = path.Join(t.destPath, viper.GetString("gk_grpc_generic_file_name"))
+	t.srcFile = jen.NewFilePath(t.destPath)
+	t.pbImportPath = pbImportPath
+	t.InitPg()
+	t.fs = fs.Get()
+	return t
+}
+func (g *generateGRPCGeneric) Generate() (err error) {
+	err = g.CreateFolderStructure(g.destPath)
+	if err != nil {
+		return err
+	}
+	endpImports, err := utils.GetEndpointImportPath(g.name)
+	if err != nil {
+		return err
+	}
+	pbImport, err := utils.GetPbImportPath(g.name, g.pbImportPath)
+	if err != nil {
+		return err
+	}
+	if b, err := g.fs.Exists(g.filePath); err != nil {
+		return err
+	} else if !b {
+		g.generateFirstTime = true
+		f := jen.NewFile("grpc")
+		g.fs.WriteFile(g.filePath, f.GoString(), false)
+	}
+	src, err := g.fs.ReadFile(g.filePath)
+	if err != nil {
+		return err
+	}
+	g.file, err = parser.NewFileParser().Parse([]byte(src))
+	if err != nil {
+		return err
+	}
+
+	pbRequests := make([]jen.Code, 0, len(g.serviceInterface.Methods))
+	pbResponse := make([]jen.Code, 0, len(g.serviceInterface.Methods))
+	epRequests := make([]jen.Code, 0, len(g.serviceInterface.Methods))
+	epResponse := make([]jen.Code, 0, len(g.serviceInterface.Methods))
+	for _, m := range g.serviceInterface.Methods {
+		n := utils.ToCamelCase(m.Name)
+		pbRequests = append(pbRequests, jen.Qual(pbImport, n+"Request"))
+		pbResponse = append(pbResponse, jen.Qual(pbImport, n+"Reply"))
+		epRequests = append(epRequests, jen.Qual(endpImports, n+"Request"))
+		epResponse = append(epResponse, jen.Qual(endpImports, n+"Response"))
+	}
+
+	pbRequestFound := false
+	pbResponseFound := false
+	epRequestFound := false
+	epResponseFound := false
+	for _, i := range g.file.Interfaces {
+		if i.Name == "PbRequest" {
+			pbRequestFound = true
+		}
+		if i.Name == "EpRequest" {
+			epRequestFound = true
+		}
+		if i.Name == "PbResponse" {
+			pbResponseFound = true
+		}
+		if i.Name == "EpResponse" {
+			epResponseFound = true
+		}
+	}
+
+	if !pbRequestFound {
+		logrus.Println("generate PbRequestType")
+		g.code.appendMultilineComment([]string{
+			"PbRequest is a union type of all pb request types.",
+		})
+		g.code.NewLine()
+		g.code.appendInterfaceType("PbRequest", pbRequests)
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+
+	if !pbResponseFound {
+		logrus.Println("generate PbResponseType")
+		g.code.appendMultilineComment([]string{
+			"PbResponse is a union type of all pb response types.",
+		})
+		g.code.NewLine()
+		g.code.appendInterfaceType("PbResponse", pbResponse)
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+
+	if !epRequestFound {
+		logrus.Println("generate EpRequestType")
+		g.code.appendMultilineComment([]string{
+			"EpRequest is a union type of all endpoint request types.",
+		})
+		g.code.NewLine()
+		g.code.appendInterfaceType("EpRequest", epRequests)
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+
+	if !epResponseFound {
+		logrus.Println("generate EpResponseType")
+		g.code.appendMultilineComment([]string{
+			"EpResponse is a union type of all endpoint response types.",
+		})
+		g.code.NewLine()
+		g.code.appendInterfaceType("EpResponse", epResponse)
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+
+	decodeFuncFound := false
+	encodeFuncFound := false
+	for _, ft := range g.file.FuncTypes {
+		if ft.Name == "DecodeFunc" {
+			decodeFuncFound = true
+		}
+
+		if ft.Name == "EncodeFunc" {
+			encodeFuncFound = true
+		}
+	}
+
+	if !decodeFuncFound {
+		g.code.appendTypeFunction(
+			"DecodeFunc",
+			[]jen.Code{
+				jen.Id("PREQ").Id("PbRequest"),
+				jen.Id("EREQ").Id("EpRequest"),
+			},
+			[]jen.Code{
+				jen.Id("*PREQ"),
+			},
+			[]jen.Code{
+				jen.Id("EREQ"),
+				jen.Error(),
+			},
+			"",
+		)
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+	if !encodeFuncFound {
+		g.code.appendTypeFunction(
+			"EncodeFunc",
+			[]jen.Code{
+				jen.Id("ERES").Id("EpResponse"),
+				jen.Id("PRES").Id("PbResponse"),
+			},
+			[]jen.Code{
+				jen.Id("ERES"),
+			},
+			nil,
+			"*PRES",
+		)
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+
+	err2GrpcErrFound := false
+	decodeGenFound := false
+	encodeGenFound := false
+
+	for _, v := range g.file.Methods {
+		if v.Name == "err2GrpcErr" {
+			err2GrpcErrFound = true
+		}
+		if v.Name == "decodeRequest" {
+			decodeGenFound = true
+		}
+		if v.Name == "encodeResponse" {
+			encodeGenFound = true
+		}
+	}
+
+	if !err2GrpcErrFound {
+		g.code.appendMultilineComment([]string{
+			"err2GrpcErr converts error to gRPC error",
+		})
+		g.code.NewLine()
+		g.code.appendFunction(
+			"err2GrpcErr",
+			nil,
+			[]jen.Code{
+				jen.Id("err").Error(),
+			},
+			nil,
+			"error",
+			jen.Return(jen.Qual("github.com/maohieng/errs", "EncodeGRPCError").Call(jen.Id("err"))),
+		)
+
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+
+	if !decodeGenFound {
+		g.code.appendMultilineComment([]string{
+			"decodeRequest a generic func converts a gRPC request to user-domain request",
+		})
+		g.code.NewLine()
+		g.code.appendFunction(
+			"decodeRequest[PREQ PbRequest, EREQ EpRequest]",
+			nil,
+			[]jen.Code{
+				jen.Id("r").Interface(),
+				jen.Id("decode").Id("DecodeFunc[PREQ, EREQ]"),
+			},
+			[]jen.Code{
+				jen.Interface(),
+				jen.Error(),
+			},
+			"",
+			jen.Id("req, ok").Op(":=").Id("r").Dot("(*PREQ)"),
+			jen.If(jen.Id("!ok")).Block(
+				jen.Return(
+					jen.Nil(),
+					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "E").Call(jen.Lit("unable to decodeRequest"))),
+				),
+			),
+
+			jen.Return(jen.Id("decode").Call(jen.Id("req"))),
+		)
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+
+	if !encodeGenFound {
+		g.code.appendMultilineComment([]string{
+			"encodeResponse a generic func converts a user-domain request to gRPC request",
+		})
+		g.code.NewLine()
+		g.code.appendFunction(
+			"encodeResponse[ERES EpResponse, PRES PbResponse]",
+			nil,
+			[]jen.Code{
+				jen.Id("r").Interface(),
+				jen.Id("encode").Id("EncodeFunc[ERES, PRES]"),
+			},
+			[]jen.Code{
+				jen.Interface(),
+				jen.Error(),
+			},
+			"",
+			jen.If(
+				jen.List(jen.Id("f"), jen.Id("ok")).Op(":=").Id("r.").Call(
+					jen.Qual(
+						endpImports,
+						"Failure",
+					),
+				).Id(";").Id("ok").Id("&&").Id("f").Dot("Failed").Call().Op("!=").Nil(),
+			).Block(
+				jen.Return(jen.List(jen.Nil(), jen.Id("err2GrpcErr").Call(jen.Id("f").Dot("Failed").Call()))),
+			),
+			jen.List(jen.Id("resp"), jen.Id("ok")).Op(":=").Id("r").Dot("(ERES)"),
+			jen.If(
+				jen.Id("!ok"),
+			).Block(
+				jen.Return(
+					jen.Nil(),
+					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "E").Call(jen.Lit("unable to encodeResponse"))),
+				),
+			),
+			jen.Return(jen.Id("encode").Call(jen.Id("resp")), jen.Nil()),
+		)
+		g.code.NewLine()
+		g.code.NewLine()
+	}
+
+	// Loop all service interface methods
+	for _, m := range g.serviceInterface.Methods {
+		decoderFound := false
+		encoderFound := false
+
+		for _, v := range g.file.Methods {
+			if v.Name == fmt.Sprintf("decode%sRequestBody", m.Name) {
+				decoderFound = true
+			}
+			if v.Name == fmt.Sprintf("encode%sResponseBody", m.Name) {
+				encoderFound = true
+			}
+		}
+
+		if !decoderFound {
+			g.code.appendMultilineComment([]string{
+				fmt.Sprintf("decode%sRequestBody converts a", m.Name),
+				fmt.Sprintf("gRPC request to a user-domain %s request.", m.Name),
+				"TODO implement the decoder",
+			})
+			g.code.NewLine()
+			n := utils.ToCamelCase(m.Name)
+			g.code.appendFunction(
+				fmt.Sprintf("decode%sRequestBody", m.Name),
+				nil,
+				[]jen.Code{
+					jen.Id("req").Id("*").Qual(pbImport, n+"Request"),
+				},
+				[]jen.Code{
+					jen.Qual(endpImports, n+"Request"),
+					jen.Error(),
+				},
+				"",
+				jen.Return(
+					jen.Qual(endpImports, n+"Request").Block(),
+					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "E").Call(jen.Lit("unimplemented"))),
+				),
+			)
+			g.code.NewLine()
+		}
+		if !encoderFound {
+			g.code.appendMultilineComment([]string{
+				fmt.Sprintf("encode%sResponseBody converts", m.Name),
+				"a user-domain response to a gRPC reply.",
+				"TODO implement the encoder",
+			})
+			g.code.NewLine()
+			n := utils.ToCamelCase(m.Name)
+			g.code.appendFunction(
+				fmt.Sprintf("encode%sResponseBody", m.Name),
+				nil,
+				[]jen.Code{
+					jen.Id("res").Qual(endpImports, n+"Response"),
+				},
+				[]jen.Code{
+					jen.Id("*").Qual(pbImport, n+"Reply"),
+				},
+				"",
+				jen.Return(
+					jen.Id("&").Qual(pbImport, n+"Reply").Block(),
 				),
 			)
 			g.code.NewLine()

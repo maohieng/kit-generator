@@ -93,11 +93,8 @@ func (fp *FileParser) parseType(ds []ast.Spec, f *File) {
 			f.Structures = append(f.Structures, str)
 		case *ast.FuncType:
 			st := tsp.Type.(*ast.FuncType)
-			f.FuncType = FuncType{
-				Name:       tsp.Name.Name,
-				Parameters: fp.parseFieldListAsNamedTypes(st.Params),
-				Results:    fp.parseFieldListAsNamedTypes(st.Results),
-			}
+			ft := NewFuncType(tsp.Name.Name, fp.parseFieldListAsNamedTypes(st.Params), fp.parseFieldListAsNamedTypes(st.Results))
+			f.FuncTypes = append(f.FuncTypes, ft)
 		default:
 			logrus.Info("Skipping unknown type")
 		}

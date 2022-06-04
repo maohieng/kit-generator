@@ -219,6 +219,10 @@ func (p *PartialGenerator) appendInterface(name string, methods []jen.Code) {
 	p.raw.Type().Id(name).Interface(methods...).Line()
 }
 
+func (p *PartialGenerator) appendInterfaceType(name string, types []jen.Code) {
+	p.raw.Type().Id(name).Interface(jen.Union(types...)).Line()
+}
+
 func (p *PartialGenerator) appendStruct(name string, fields ...jen.Code) {
 	p.raw.Type().Id(name).Struct(fields...).Line()
 }
@@ -244,4 +248,45 @@ func (p *PartialGenerator) appendFunction(name string, stp *jen.Statement,
 		p.raw.Params(results...)
 	}
 	p.raw.Block(body...)
+}
+
+// appendTypeParamFunction appends a `func $name[$paramtypes]($parameters) ($results) { $body }`
+func (p *PartialGenerator) appendTypeParamFunction(name string, paramtypes []jen.Code,
+	parameters []jen.Code, results []jen.Code, oneResponse string, body ...jen.Code) {
+	p.raw.Func()
+	if name != "" {
+		p.raw.Id(name)
+	}
+	if paramtypes != nil {
+		p.raw.TypesFunc(func(g *jen.Group) {
+			g.List(paramtypes...)
+		})
+	}
+	p.raw.Params(parameters...)
+	if oneResponse != "" {
+		p.raw.Id(oneResponse)
+	} else if len(results) > 0 {
+		p.raw.Params(results...)
+	}
+
+	p.raw.Block(body...)
+
+}
+
+// appendTypeFunction appends a `type $name func[$paramtypes]($params) $returns`
+func (p *PartialGenerator) appendTypeFunction(name string, paramtypes []jen.Code,
+	params []jen.Code, returns []jen.Code, oneReturn string) {
+	p.raw.Type().Id(name)
+	if paramtypes != nil {
+		p.raw.TypesFunc(func(g *jen.Group) {
+			g.List(paramtypes...)
+		})
+	}
+	p.raw.Func()
+	p.raw.Params(params...)
+	if oneReturn != "" {
+		p.raw.Id(oneReturn)
+	} else if len(returns) > 0 {
+		p.raw.Params(returns...)
+	}
 }
