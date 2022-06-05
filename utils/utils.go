@@ -105,6 +105,11 @@ func GetDockerFileProjectPath() (string, error) {
 	return projectPath, nil
 }
 
+// GetEndpointImportPath returns the import path of the service endpoints.
+func GetEntityImportPath(name string) (string, error) {
+	return getImportPath(name, "gk_entity_path_format")
+}
+
 // GetGOPATH returns the gopath.
 func GetGOPATH() string {
 	if viper.GetString("GOPATH") != "" {

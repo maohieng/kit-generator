@@ -1524,7 +1524,7 @@ func (g *generateGRPCGeneric) Generate() (err error) {
 				"",
 				jen.Return(
 					jen.Qual(endpImports, n+"Request").Block(),
-					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "E").Call(jen.Lit("unimplemented"))),
+					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "SNew").Call(jen.Lit("unimplemented"))),
 				),
 			)
 			g.code.NewLine()

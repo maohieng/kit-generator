@@ -53,12 +53,61 @@ func (g *NewService) Generate() error {
 		"Add your methods here",
 		"e.x: Foo(ctx context.Context,s string)(rs string, err error)",
 	}
+	n := utils.ToCamelCase(g.name)
+	entityImport, err := utils.GetEntityImportPath(g.name)
 	partial := NewPartialGenerator(nil)
 	partial.appendMultilineComment(comments)
 	g.code.Raw().Commentf("%s describes the service.", g.interfaceName).Line()
 	g.code.appendInterface(
 		g.interfaceName,
-		[]jen.Code{partial.Raw()},
+		[]jen.Code{
+			jen.Id("Create").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id(g.name).Id("*").Qual(entityImport, n),
+			).Params(
+				jen.Id("id").Id("string"),
+				jen.Err().Error(),
+			),
+			jen.Id("Update").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id(g.name).Id("*").Qual(entityImport, n),
+			).Params(
+				jen.Id("new"+n).Id("*").Qual(entityImport, n),
+				jen.Err().Error(),
+			),
+			jen.Id("GetOne").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("id").Id("string"),
+			).Params(
+				jen.Id(g.name).Id("*").Qual(entityImport, n),
+				jen.Err().Error(),
+			),
+			jen.Id("GetAllByOwner").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("ownerId").Id("string"),
+			).Params(
+				jen.Id(g.name).Id("[]").Qual(entityImport, n),
+				jen.Err().Error(),
+			),
+			jen.Id("GetAll").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+			).Params(
+				jen.Id(g.name).Id("[]").Qual(entityImport, n),
+				jen.Err().Error(),
+			),
+			jen.Id("Delete").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("id").Id("string"),
+			).Params(
+				jen.Err().Error(),
+			),
+			jen.Id("DeleteSoft").Call(
+				jen.Id("ctx").Qual("context", "Context"),
+				jen.Id("id").Id("string"),
+			).Params(
+				jen.Err().Error(),
+			),
+		},
 	)
 
 	return g.fs.WriteFile(g.filePath, g.srcFile.GoString(), false)
