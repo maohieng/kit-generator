@@ -53,7 +53,8 @@ func (g *NewService) Generate() error {
 		"Add your methods here",
 		"e.x: Foo(ctx context.Context,s string)(rs string, err error)",
 	}
-	n := utils.ToCamelCase(g.name)
+	entityType := utils.ToCamelCase(g.name)
+	entityVar := utils.ToLowerFirstCamelCase(g.name)
 	entityImport, err := utils.GetEntityImportPath(g.name)
 	partial := NewPartialGenerator(nil)
 	partial.appendMultilineComment(comments)
@@ -63,36 +64,36 @@ func (g *NewService) Generate() error {
 		[]jen.Code{
 			jen.Id("Create").Call(
 				jen.Id("ctx").Qual("context", "Context"),
-				jen.Id(g.name).Id("*").Qual(entityImport, n),
+				jen.Id(entityVar).Id("*").Qual(entityImport, entityType),
 			).Params(
 				jen.Id("id").Id("string"),
 				jen.Err().Error(),
 			),
 			jen.Id("Update").Call(
 				jen.Id("ctx").Qual("context", "Context"),
-				jen.Id(g.name).Id("*").Qual(entityImport, n),
+				jen.Id(entityVar).Id("*").Qual(entityImport, entityType),
 			).Params(
-				jen.Id("new"+n).Id("*").Qual(entityImport, n),
+				jen.Id("new"+entityType).Id("*").Qual(entityImport, entityType),
 				jen.Err().Error(),
 			),
 			jen.Id("GetOne").Call(
 				jen.Id("ctx").Qual("context", "Context"),
 				jen.Id("id").Id("string"),
 			).Params(
-				jen.Id(g.name).Id("*").Qual(entityImport, n),
+				jen.Id(entityVar).Id("*").Qual(entityImport, entityType),
 				jen.Err().Error(),
 			),
 			jen.Id("GetAllByOwner").Call(
 				jen.Id("ctx").Qual("context", "Context"),
 				jen.Id("ownerId").Id("string"),
 			).Params(
-				jen.Id(g.name).Id("[]").Qual(entityImport, n),
+				jen.Id(entityVar).Id("[]").Qual(entityImport, entityType),
 				jen.Err().Error(),
 			),
 			jen.Id("GetAll").Call(
 				jen.Id("ctx").Qual("context", "Context"),
 			).Params(
-				jen.Id(g.name).Id("[]").Qual(entityImport, n),
+				jen.Id(entityVar).Id("[]").Qual(entityImport, entityType),
 				jen.Err().Error(),
 			),
 			jen.Id("Delete").Call(

@@ -1437,7 +1437,7 @@ func (g *generateGRPCGeneric) Generate() (err error) {
 			jen.If(jen.Id("!ok")).Block(
 				jen.Return(
 					jen.Nil(),
-					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "E").Call(jen.Lit("unable to decodeRequest"))),
+					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "New").Call(jen.Qual("errors", "New").Call(jen.Lit("unable to decodeRequest")))),
 				),
 			),
 
@@ -1480,7 +1480,7 @@ func (g *generateGRPCGeneric) Generate() (err error) {
 			).Block(
 				jen.Return(
 					jen.Nil(),
-					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "E").Call(jen.Lit("unable to encodeResponse"))),
+					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "New").Call(jen.Qual("errors", "New").Call(jen.Lit("unable to encodeResponse")))),
 				),
 			),
 			jen.Return(jen.Id("encode").Call(jen.Id("resp")), jen.Nil()),
@@ -1524,7 +1524,7 @@ func (g *generateGRPCGeneric) Generate() (err error) {
 				"",
 				jen.Return(
 					jen.Qual(endpImports, n+"Request").Block(),
-					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "SNew").Call(jen.Lit("unimplemented"))),
+					jen.Id("err2GrpcErr").Call(jen.Qual("github.com/maohieng/errs", "New").Call(jen.Qual("errors", "New").Call(jen.Lit("unimplemented")))),
 				),
 			)
 			g.code.NewLine()
