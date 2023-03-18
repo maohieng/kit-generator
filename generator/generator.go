@@ -36,7 +36,7 @@ func (b *BaseGenerator) InitPg() {
 	b.code = NewPartialGenerator(b.srcFile.Empty())
 }
 func (b *BaseGenerator) getMissingImports(imp []parser.NamedTypeValue, f *parser.File) ([]parser.NamedTypeValue, error) {
-	n := []parser.NamedTypeValue{}
+	var n []parser.NamedTypeValue
 	for _, v := range imp {
 		for i, vo := range f.Imports {
 			if vo.Name == "" {
@@ -289,4 +289,12 @@ func (p *PartialGenerator) appendTypeFunction(name string, paramtypes []jen.Code
 	} else if len(returns) > 0 {
 		p.raw.Params(returns...)
 	}
+}
+
+func (p *PartialGenerator) appendConsts(consts ...jen.Code) {
+	p.raw.Const().Defs(consts...).Line()
+}
+
+func (p *PartialGenerator) appendVars(vars ...jen.Code) {
+	p.raw.Var().Defs(vars...).Line()
 }

@@ -640,21 +640,21 @@ func (g *generateHTTPTransportBase) Generate() (err error) {
 	} else if g.httRouter {
 		body = append([]jen.Code{
 			jen.Id("m").Op(":=").Qual("github.com/julienschmidt/httprouter", "New").Call(),
-			jen.Id("m").Dot("GlobalOPTIONS").Op("=").Qual("net/http", "HandlerFunc").Call(
-				jen.Func().Params(jen.Id("w").Qual("net/http", "ResponseWriter"),
-					jen.Id("r").Id("*").Qual("net/http", "Request"),
-				).Block(
-					jen.If(jen.Id("r").Dot("Header").Dot("Get").Call(jen.Lit("Access-Control-Request-Method")).Op("!=").Lit("")).Block(
-						jen.Comment("Set CORS headers"),
-						jen.Id("header").Op(":=").Id("w").Dot("Header").Call(),
-						jen.Id("header").Dot("Set").Call(jen.Lit("Access-Control-Allow-Methods"), jen.Id("header").Dot("Get").Call(jen.Lit("Allow"))),
-						jen.Id("header").Dot("Set").Call(jen.Lit("Access-Control-Allow-Origin"), jen.Lit("*")),
-					),
-
-					jen.Comment("Adjust status code to 204"),
-					jen.Id("w").Dot("WriteHeader").Call(jen.Qual("net/http", "StatusNoContent")),
-				),
-			),
+			//jen.Id("m").Dot("GlobalOPTIONS").Op("=").Qual("net/http", "HandlerFunc").Call(
+			//	jen.Func().Params(jen.Id("w").Qual("net/http", "ResponseWriter"),
+			//		jen.Id("r").Id("*").Qual("net/http", "Request"),
+			//	).Block(
+			//		jen.If(jen.Id("r").Dot("Header").Dot("Get").Call(jen.Lit("Access-Control-Request-Method")).Op("!=").Lit("")).Block(
+			//			jen.Comment("Set CORS headers"),
+			//			jen.Id("header").Op(":=").Id("w").Dot("Header").Call(),
+			//			jen.Id("header").Dot("Set").Call(jen.Lit("Access-Control-Allow-Methods"), jen.Id("header").Dot("Get").Call(jen.Lit("Allow"))),
+			//			jen.Id("header").Dot("Set").Call(jen.Lit("Access-Control-Allow-Origin"), jen.Lit("*")),
+			//		),
+			//
+			//		jen.Comment("Adjust status code to 204"),
+			//		jen.Id("w").Dot("WriteHeader").Call(jen.Qual("net/http", "StatusNoContent")),
+			//	),
+			//),
 		}, handles...)
 	} else {
 		body = append([]jen.Code{

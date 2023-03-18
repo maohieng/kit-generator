@@ -1540,6 +1540,9 @@ func (g *generateCmd) Generate() (err error) {
 	if err != nil {
 		return err
 	}
+
+	g.generateTransportType()
+
 	g.generateVars()
 	g.generateInitFlagSet()
 	runFound := false
@@ -1685,7 +1688,7 @@ func (g *generateCmd) generateRun() (*PartialGenerator, error) {
 	pg.Raw().Id("fs").Dot("Parse").Call(jen.Qual("os", "Args").Index(jen.Lit(1), jen.Empty())).
 		Line().Line()
 
-	pg.Raw().Id("logger").Dot("Log").Call(jen.Lit("TRANSPORT"), jen.Qual("vgo.com/lib/core", "AppTrans"))
+	pg.Raw().Id("logger").Dot("Log").Call(jen.Lit("TRANSPORT"), jen.Id("AppTrans"))
 
 	pg.appendMultilineComment(
 		[]string{
@@ -1804,73 +1807,72 @@ func (g *generateCmd) generateRun() (*PartialGenerator, error) {
 	).Line()
 	return pg, nil
 }
+
+func (g *generateCmd) generateTransportType() {
+	if g.generateFirstTime {
+		g.code.Raw().Type().Id("Transport").String().Line()
+		//g.code.Raw().Const().Id("GrpcTransport").Qual("", "Transport").Op("=").Lit("GRPC").Line()
+		//g.code.Raw().Const().Id("HttpTransport").Qual("", "Transport").Op("=").Lit("HTTP").Line()
+		g.code.appendConsts(
+			jen.Id("GrpcTransport").Qual("", "Transport").Op("=").Lit("GRPC"),
+			jen.Id("HttpTransport").Qual("", "Transport").Op("=").Lit("HTTP"),
+		)
+	}
+}
+
 func (g *generateCmd) generateVars() {
 	if g.generateFirstTime {
-		g.code.Raw().Var().Id("tracer").Qual("github.com/opentracing/opentracing-go", "Tracer").Line()
-		g.code.Raw().Var().Id("logger").Qual("github.com/go-kit/log", "Logger").Line()
-		g.code.appendMultilineComment(
-			[]string{
-				"Define our flags. Your service probably won't need to bind listeners for",
-				"all* supported transports, but we do it here for demonstration purposes.",
-			},
+		g.code.appendVars(
+			jen.Id("tracer").Qual("github.com/opentracing/opentracing-go", "Tracer"),
+			jen.Id("logger").Qual("github.com/go-kit/log", "Logger"),
+
+			jen.Id("fs").Op("=").Qual("flag", "NewFlagSet").Call(
+				jen.Lit(g.name), jen.Qual("flag", "ExitOnError"),
+			),
+			jen.Id("debugAddr").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("debug-addr"),
+				jen.Lit(":8082"),
+				jen.Lit("Debug and metrics listen address"),
+			),
+			jen.Id("httpAddr").Id("*string"),
+			jen.Id("grpcAddr").Id("*string"),
+
+			jen.Id("thriftAddr").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("thrift-addr"),
+				jen.Lit(":8083"),
+				jen.Lit("Thrift listen address"),
+			),
+			jen.Id("thriftProtocol").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("thrift-protocol"),
+				jen.Lit("binary"),
+				jen.Lit("binary, compact, json, simplejson"),
+			),
+			jen.Id("thriftBuffer").Op("=").Id("fs").Dot("Int").Call(
+				jen.Lit("thrift-buffer"),
+				jen.Lit(0),
+				jen.Lit("0 for unbuffered"),
+			),
+			jen.Id("thriftFramed").Op("=").Id("fs").Dot("Bool").Call(
+				jen.Lit("thrift-framed"),
+				jen.Lit(false),
+				jen.Lit("true to enable framing"),
+			),
+			jen.Id("zipkinURL").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("zipkin-url"),
+				jen.Lit(""),
+				jen.Lit("Enable Zipkin tracing via a collector URL e.g. http://localhost:9411/api/v1/spans"),
+			),
+			jen.Id("lightstepToken").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("lightstep-token"),
+				jen.Lit(""),
+				jen.Lit("Enable LightStep tracing via a LightStep access token"),
+			),
+			jen.Id("appdashAddr").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("appdash-addr"),
+				jen.Lit(""),
+				jen.Lit("Enable Appdash tracing via an Appdash server host:port"),
+			),
 		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("fs").Op("=").Qual("flag", "NewFlagSet").Call(
-			jen.Lit(g.name), jen.Qual("flag", "ExitOnError"),
-		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("debugAddr").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("debug-addr"),
-			jen.Lit(":8082"),
-			jen.Lit("Debug and metrics listen address"),
-		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("httpAddr").Id("*string")
-		g.code.NewLine()
-		g.code.Raw().Var().Id("grpcAddr").Id("*string")
-		g.code.NewLine()
-		g.code.Raw().Var().Id("thriftAddr").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("thrift-addr"),
-			jen.Lit(":8083"),
-			jen.Lit("Thrift listen address"),
-		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("thriftProtocol").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("thrift-protocol"),
-			jen.Lit("binary"),
-			jen.Lit("binary, compact, json, simplejson"),
-		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("thriftBuffer").Op("=").Id("fs").Dot("Int").Call(
-			jen.Lit("thrift-buffer"),
-			jen.Lit(0),
-			jen.Lit("0 for unbuffered"),
-		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("thriftFramed").Op("=").Id("fs").Dot("Bool").Call(
-			jen.Lit("thrift-framed"),
-			jen.Lit(false),
-			jen.Lit("true to enable framing"),
-		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("zipkinURL").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("zipkin-url"),
-			jen.Lit(""),
-			jen.Lit("Enable Zipkin tracing via a collector URL e.g. http://localhost:9411/api/v1/spans"),
-		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("lightstepToken").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("lightstep-token"),
-			jen.Lit(""),
-			jen.Lit("Enable LightStep tracing via a LightStep access token"),
-		)
-		g.code.NewLine()
-		g.code.Raw().Var().Id("appdashAddr").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("appdash-addr"),
-			jen.Lit(""),
-			jen.Lit("Enable Appdash tracing via an Appdash server host:port"),
-		)
-		g.code.NewLine()
 	}
 }
 
@@ -1886,38 +1888,39 @@ func (g *generateCmd) generateInitFlagSet() {
 	pt.Raw().If(
 		jen.Id("port").Op("==").Lit("").Block(
 			jen.Id("port").Op("=").Lit("8080"),
-			jen.Id("logger").Dot("Log").Call(jen.Lit("port env"), jen.Lit("not specified, use 8080")),
+			jen.Id("logger").Dot("Log").Call(jen.Lit("cmd"), jen.Lit("service"), jen.Lit("port"), jen.Lit("unspecified => use 8080")),
 		),
 	).Line().Line()
 
-	pt.Raw().If(
-		jen.Qual("vgo.com/lib/core", "AppTrans").Op("==").Qual("vgo.com/lib/core", "HttpTransport").Block(
+	pt.Raw().Switch(jen.Id("AppTrans").Op("=").Qual("", "Transport").Call(jen.Qual("os", "Getenv").Call(jen.Lit("TRANSPORT"))), jen.Id("AppTrans")).Block(
+		jen.Case(jen.Id("HttpTransport")).Block(
 			jen.Id("httpAddr").Op("=").Id("fs").Dot("String").Call(
 				jen.Lit("http-addr"),
 				jen.Qual("fmt", "Sprintf").Call(jen.Lit(":%s"), jen.Id("port")),
 				jen.Lit("HTTP listen address"),
 			),
 		),
-	).Else().If(
-		jen.Qual("vgo.com/lib/core", "AppTrans").Op("==").Qual("vgo.com/lib/core", "GrpcTransport").Block(
+		jen.Case(jen.Id("GrpcTransport")).Block(
 			jen.Id("grpcAddr").Op("=").Id("fs").Dot("String").Call(
 				jen.Lit("grpc-addr"),
 				jen.Qual("fmt", "Sprintf").Call(jen.Lit(":%s"), jen.Id("port")),
 				jen.Lit("GRPC listen address"),
 			),
 		),
-	).Else().Block(
-		jen.Id("httpAddr").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("http-addr"),
-			jen.Lit(":8080"),
-			jen.Lit("HTTP listen address"),
-		),
-		jen.Id("grpcAddr").Op("=").Id("fs").Dot("String").Call(
-			jen.Lit("grpc-addr"),
-			jen.Lit(":8081"),
-			jen.Lit("GRPC listen address"),
+		jen.Default().Block(
+			jen.Id("httpAddr").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("http-addr"),
+				jen.Lit(":8080"),
+				jen.Lit("HTTP listen address"),
+			),
+			jen.Id("grpcAddr").Op("=").Id("fs").Dot("String").Call(
+				jen.Lit("grpc-addr"),
+				jen.Lit(":8081"),
+				jen.Lit("GRPC listen address"),
+			),
 		),
 	).Line()
+
 	g.code.NewLine()
 	g.code.appendFunction("initFlagSet",
 		nil,
@@ -1947,8 +1950,8 @@ func (g *generateCmd) generateInitHTTP() (err error) {
 	pt := NewPartialGenerator(nil)
 
 	pt.Raw().If(
-		jen.Qual("vgo.com/lib/core", "AppTrans").
-			Op("==").Qual("vgo.com/lib/core", "GrpcTransport").Block(jen.Return()),
+		jen.Id("AppTrans").
+			Op("==").Id("GrpcTransport").Block(jen.Return()),
 	).Line().Line()
 
 	pt.Raw().Id("options").Op(":=").Id("defaultHttpOptions").Call(
@@ -2032,8 +2035,8 @@ func (g *generateCmd) generateInitGRPC() (err error) {
 	pt := NewPartialGenerator(nil)
 
 	pt.Raw().If(
-		jen.Qual("vgo.com/lib/core", "AppTrans").
-			Op("==").Qual("vgo.com/lib/core", "HttpTransport").Block(jen.Return()),
+		jen.Id("AppTrans").
+			Op("==").Id("HttpTransport").Block(jen.Return()),
 	).Line().Line()
 
 	pt.Raw().Id("options").Op(":=").Id("defaultGRPCOptions").Call(
