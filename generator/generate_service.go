@@ -1872,6 +1872,7 @@ func (g *generateCmd) generateVars() {
 				jen.Lit(""),
 				jen.Lit("Enable Appdash tracing via an Appdash server host:port"),
 			),
+			jen.Id("AppTrans").Qual("", "Transport"),
 		)
 	}
 }
