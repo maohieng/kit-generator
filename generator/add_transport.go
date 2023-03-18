@@ -26,8 +26,7 @@ type GenerateTransport struct {
 	BaseGenerator
 	name             string
 	transport        string
-	gorillaMux       bool
-	httpRouter       bool
+	router           string
 	interfaceName    string
 	destPath         string
 	pbPath           string
@@ -39,11 +38,10 @@ type GenerateTransport struct {
 }
 
 // NewGenerateTransport returns a transport generator.
-func NewGenerateTransport(name string, gorillaMux bool, httpRouter bool, transport, pbPath, pbImportPath string, methods []string) Gen {
+func NewGenerateTransport(name string, router string, transport, pbPath, pbImportPath string, methods []string) Gen {
 	i := &GenerateTransport{
 		name:          name,
-		gorillaMux:    gorillaMux,
-		httpRouter:    httpRouter,
+		router:        router,
 		interfaceName: utils.ToCamelCase(name + "Service"),
 		destPath:      fmt.Sprintf(viper.GetString("gk_service_path_format"), utils.ToLowerSnakeCase(name)),
 		methods:       methods,
@@ -92,12 +90,12 @@ func (g *GenerateTransport) Generate() (err error) {
 	}
 	switch g.transport {
 	case "http":
-		tG := newGenerateHTTPTransport(g.name, g.gorillaMux, g.httpRouter, g.serviceInterface, g.methods)
+		tG := newGenerateHTTPTransport(g.name, g.router, g.serviceInterface, g.methods)
 		err = tG.Generate()
 		if err != nil {
 			return err
 		}
-		tbG := newGenerateHTTPTransportBase(g.name, g.gorillaMux, g.httpRouter, g.serviceInterface, g.methods, mth)
+		tbG := newGenerateHTTPTransportBase(g.name, g.router, g.serviceInterface, g.methods, mth)
 		err = tbG.Generate()
 		if err != nil {
 			return err
@@ -191,25 +189,25 @@ func (g *GenerateTransport) removeUnwantedMethods() {
 
 type generateHTTPTransport struct {
 	BaseGenerator
-	name                                      string
-	methods                                   []string
-	interfaceName                             string
-	destPath                                  string
-	generateFirstTime, gorillaMux, httpRouter bool
-	file                                      *parser.File
-	filePath                                  string
-	serviceInterface                          parser.Interface
+	name              string
+	router            string
+	methods           []string
+	interfaceName     string
+	destPath          string
+	generateFirstTime bool
+	file              *parser.File
+	filePath          string
+	serviceInterface  parser.Interface
 }
 
-func newGenerateHTTPTransport(name string, gorillaMux bool, httpRouter bool, serviceInterface parser.Interface, methods []string) Gen {
+func newGenerateHTTPTransport(name string, router string, serviceInterface parser.Interface, methods []string) Gen {
 	t := &generateHTTPTransport{
 		name:             name,
+		router:           router,
 		methods:          methods,
 		interfaceName:    utils.ToCamelCase(name + "Service"),
 		destPath:         fmt.Sprintf(viper.GetString("gk_http_path_format"), utils.ToLowerSnakeCase(name)),
 		serviceInterface: serviceInterface,
-		gorillaMux:       gorillaMux,
-		httpRouter:       httpRouter,
 	}
 	t.filePath = path.Join(t.destPath, viper.GetString("gk_http_file_name"))
 	t.srcFile = jen.NewFilePath(t.destPath)
@@ -286,21 +284,36 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				fmt.Sprintf("make%sHandler creates the handler logic", m.Name),
 			})
 			g.code.NewLine()
-			var st *jen.Statement
-			if g.gorillaMux {
-				st = jen.Id("m").Dot("Methods").Call(
-					jen.Lit("POST"),
-				).Dot("Path").Call(
-					jen.Lit("/api/v1/" + strings.Replace(utils.ToLowerSnakeCase(m.Name), "_", "-", -1)),
-				).Dot("Handler").Call(
-					jen.Qual("github.com/gorilla/handlers", "CORS").Call(
-						jen.Qual("github.com/gorilla/handlers", "AllowedMethods").Call(
-							jen.Index().String().Values(jen.Lit("POST")),
+			var st []jen.Code
+			if g.router == Gorilla {
+				st = []jen.Code{
+					jen.Id("m").Dot("Methods").Call(
+						jen.Lit("POST"),
+					).Dot("Path").Call(
+						jen.Lit("/api/v1/" + strings.Replace(utils.ToLowerSnakeCase(m.Name), "_", "-", -1)),
+					).Dot("Handler").Call(
+						jen.Qual("github.com/gorilla/handlers", "CORS").Call(
+							jen.Qual("github.com/gorilla/handlers", "AllowedMethods").Call(
+								jen.Index().String().Values(jen.Lit("POST")),
+							),
+							jen.Qual("github.com/gorilla/handlers", "AllowedOrigins").Call(
+								jen.Index().String().Values(jen.Lit("*")),
+							),
+						).Call(
+							jen.Qual("github.com/go-kit/kit/transport/http", "NewServer").Call(
+								jen.Id(fmt.Sprintf("endpoints.%sEndpoint", m.Name)),
+								jen.Id(fmt.Sprintf("decode%sRequest", m.Name)),
+								jen.Id(fmt.Sprintf("encode%sResponse", m.Name)),
+								jen.Id("options..."),
+							),
 						),
-						jen.Qual("github.com/gorilla/handlers", "AllowedOrigins").Call(
-							jen.Index().String().Values(jen.Lit("*")),
-						),
-					).Call(
+					),
+				}
+			} else if g.router == HttpRouter {
+				st = []jen.Code{
+					jen.Id("m").Dot("Handler").Call(
+						jen.Lit("POST"),
+						jen.Lit("/api/v1/"+strings.Replace(utils.ToLowerSnakeCase(m.Name), "_", "-", -1)),
 						jen.Qual("github.com/go-kit/kit/transport/http", "NewServer").Call(
 							jen.Id(fmt.Sprintf("endpoints.%sEndpoint", m.Name)),
 							jen.Id(fmt.Sprintf("decode%sRequest", m.Name)),
@@ -308,33 +321,41 @@ func (g *generateHTTPTransport) Generate() (err error) {
 							jen.Id("options..."),
 						),
 					),
-				)
-			} else if g.httpRouter {
-				st = jen.Id("m").Dot("Handler").Call(
-					jen.Lit("POST"), jen.Lit("/api/v1/"+strings.Replace(utils.ToLowerSnakeCase(m.Name), "_", "-", -1)),
-					jen.Qual("github.com/go-kit/kit/transport/http", "NewServer").Call(
+				}
+			} else if g.router == FastRouter {
+				st = []jen.Code{
+					jen.Id("handler").Op(":=").Qual("github.com/go-kit/kit/transport/http", "NewServer").Call(
 						jen.Id(fmt.Sprintf("endpoints.%sEndpoint", m.Name)),
 						jen.Id(fmt.Sprintf("decode%sRequest", m.Name)),
 						jen.Id(fmt.Sprintf("encode%sResponse", m.Name)),
 						jen.Id("options..."),
 					),
-				)
+					jen.Id("m").Dot("Handle").Call(
+						jen.Lit("POST"),
+						jen.Lit("/api/v1/"+strings.Replace(utils.ToLowerSnakeCase(m.Name), "_", "-", -1)),
+						jen.Qual("github.com/valyala/fasthttp/fasthttpadaptor", "NewFastHTTPHandler").Call(jen.Id("handler")),
+					),
+				}
 			} else {
-				st = jen.Id("m").Dot("Handle").Call(
-					jen.Lit("/"+strings.Replace(utils.ToLowerSnakeCase(m.Name), "_", "-", -1)),
-					jen.Qual("github.com/go-kit/kit/transport/http", "NewServer").Call(
-						jen.Id(fmt.Sprintf("endpoints.%sEndpoint", m.Name)),
-						jen.Id(fmt.Sprintf("decode%sRequest", m.Name)),
-						jen.Id(fmt.Sprintf("encode%sResponse", m.Name)),
-						jen.Id("options..."),
+				st = []jen.Code{
+					jen.Id("m").Dot("Handle").Call(
+						jen.Lit("/"+strings.Replace(utils.ToLowerSnakeCase(m.Name), "_", "-", -1)),
+						jen.Qual("github.com/go-kit/kit/transport/http", "NewServer").Call(
+							jen.Id(fmt.Sprintf("endpoints.%sEndpoint", m.Name)),
+							jen.Id(fmt.Sprintf("decode%sRequest", m.Name)),
+							jen.Id(fmt.Sprintf("encode%sResponse", m.Name)),
+							jen.Id("options..."),
+						),
 					),
-				)
+				}
 			}
 			var param *jen.Statement
-			if g.gorillaMux {
+			if g.router == Gorilla {
 				param = jen.Id("m").Id("*").Qual("github.com/gorilla/mux", "Router")
-			} else if g.httpRouter {
+			} else if g.router == HttpRouter {
 				param = jen.Id("m").Id("*").Qual("github.com/julienschmidt/httprouter", "Router")
+			} else if g.router == FastRouter {
+				param = jen.Id("m").Id("*").Qual("github.com/fasthttp/router", "Router")
 			} else {
 				param = jen.Id("m").Id("*").Qual("net/http", "ServeMux")
 			}
@@ -351,7 +372,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				},
 				[]jen.Code{},
 				"",
-				st,
+				st...,
 			)
 			g.code.NewLine()
 
@@ -545,6 +566,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 type generateHTTPTransportBase struct {
 	BaseGenerator
 	name             string
+	router           string
 	methods          []string
 	allMethods       []parser.Method
 	interfaceName    string
@@ -552,17 +574,14 @@ type generateHTTPTransportBase struct {
 	filePath         string
 	file             *parser.File
 	httpFilePath     string
-	gorillaMux       bool
-	httRouter        bool
 	serviceInterface parser.Interface
 }
 
-func newGenerateHTTPTransportBase(name string, gorillaMux bool, httpRouter bool, serviceInterface parser.Interface, methods []string, allMethods []parser.Method) Gen {
+func newGenerateHTTPTransportBase(name string, router string, serviceInterface parser.Interface, methods []string, allMethods []parser.Method) Gen {
 	t := &generateHTTPTransportBase{
 		name:             name,
 		methods:          methods,
-		gorillaMux:       gorillaMux,
-		httRouter:        httpRouter,
+		router:           router,
 		allMethods:       allMethods,
 		interfaceName:    utils.ToCamelCase(name + "Service"),
 		destPath:         fmt.Sprintf(viper.GetString("gk_http_path_format"), utils.ToLowerSnakeCase(name)),
@@ -633,11 +652,11 @@ func (g *generateHTTPTransportBase) Generate() (err error) {
 		}
 	}
 	var body []jen.Code
-	if g.gorillaMux {
+	if g.router == Gorilla {
 		body = append([]jen.Code{
 			jen.Id("m").Op(":=").Qual("github.com/gorilla/mux", "NewRouter").Call(),
 		}, handles...)
-	} else if g.httRouter {
+	} else if g.router == HttpRouter {
 		body = append([]jen.Code{
 			jen.Id("m").Op(":=").Qual("github.com/julienschmidt/httprouter", "New").Call(),
 			//jen.Id("m").Dot("GlobalOPTIONS").Op("=").Qual("net/http", "HandlerFunc").Call(
@@ -656,24 +675,47 @@ func (g *generateHTTPTransportBase) Generate() (err error) {
 			//	),
 			//),
 		}, handles...)
+	} else if g.router == FastRouter {
+		body = append([]jen.Code{
+			jen.Id("m").Op(":=").Qual("github.com/fasthttp/router", "New").Call(),
+		}, handles...)
 	} else {
 		body = append([]jen.Code{
-			jen.Id("m").Op(":=").Qual("net/http", "NewServeMux").Call()}, handles...)
+			jen.Id("m").Op(":=").Qual("net/http", "NewServeMux").Call(),
+		}, handles...)
 	}
 	body = append(body, jen.Return(jen.Id("m")))
-	g.code.appendFunction(
-		"NewHTTPHandler",
-		nil,
-		[]jen.Code{
-			jen.Id("endpoints").Qual(endpointImport, "Endpoints"),
-			jen.Id("options").Map(jen.String()).Index().Qual("github.com/go-kit/kit/transport/http", "ServerOption"),
-		},
-		[]jen.Code{
-			jen.Qual("net/http", "Handler"),
-		},
-		"",
-		body...,
-	)
+
+	if g.router == FastRouter {
+		body[len(body)-1] = jen.Return(jen.Id("m")).Dot("Handler")
+		g.code.appendFunction(
+			"NewHTTPHandler",
+			nil,
+			[]jen.Code{
+				jen.Id("endpoints").Qual(endpointImport, "Endpoints"),
+				jen.Id("options").Map(jen.String()).Index().Qual("github.com/go-kit/kit/transport/http", "ServerOption"),
+			},
+			[]jen.Code{
+				jen.Qual("github.com/valyala/fasthttp", "RequestHandler"),
+			},
+			"",
+			body...,
+		)
+	} else {
+		g.code.appendFunction(
+			"NewHTTPHandler",
+			nil,
+			[]jen.Code{
+				jen.Id("endpoints").Qual(endpointImport, "Endpoints"),
+				jen.Id("options").Map(jen.String()).Index().Qual("github.com/go-kit/kit/transport/http", "ServerOption"),
+			},
+			[]jen.Code{
+				jen.Qual("net/http", "Handler"),
+			},
+			"",
+			body...,
+		)
+	}
 	g.code.NewLine()
 	return g.fs.WriteFile(g.filePath, g.srcFile.GoString(), true)
 }

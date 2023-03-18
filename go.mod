@@ -1,6 +1,6 @@
 module github.com/GrantZheng/kit
 
-go 1.17
+go 1.20
 
 require (
 	github.com/Songmu/prompter v0.5.0
@@ -13,7 +13,7 @@ require (
 	github.com/spf13/afero v1.8.0
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
-	golang.org/x/tools v0.1.8
+	golang.org/x/tools v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -32,10 +32,9 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	golang.org/x/mod v0.5.1 // indirect
-	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect
+	golang.org/x/mod v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.0.0-20210317153231-de623e64d2a6 // indirect
-	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 )

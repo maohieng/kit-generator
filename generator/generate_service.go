@@ -16,34 +16,40 @@ import (
 // SupportedTransports is an array containing the supported transport types.
 var SupportedTransports = []string{"http", "grpc"}
 
+const (
+	Gorilla    = "gorilla"
+	HttpRouter = "httprouter"
+	FastRouter = "fastrouter"
+)
+
 // GenerateService implements Gen and is used to generate the service.
 type GenerateService struct {
 	BaseGenerator
-	pg                                               *PartialGenerator
-	name                                             string
-	transport                                        string
-	pbPath                                           string
-	pbImportPath                                     string
-	interfaceName                                    string
-	serviceStructName                                string
-	destPath                                         string
-	methods                                          []string
-	filePath                                         string
-	file                                             *parser.File
-	serviceInterface                                 parser.Interface
-	sMiddleware, gorillaMux, eMiddleware, httpRouter bool
+	pg                       *PartialGenerator
+	name                     string
+	transport                string
+	router                   string
+	pbPath                   string
+	pbImportPath             string
+	interfaceName            string
+	serviceStructName        string
+	destPath                 string
+	methods                  []string
+	filePath                 string
+	file                     *parser.File
+	serviceInterface         parser.Interface
+	sMiddleware, eMiddleware bool
 }
 
 // NewGenerateService returns a initialized and ready generator.
-func NewGenerateService(name, transport, pbPath, pbImportPath string, sMiddleware, gorillaMux, httpRouter, eMiddleware bool, methods []string) Gen {
+func NewGenerateService(name, transport, router, pbPath, pbImportPath string, sMiddleware, eMiddleware bool, methods []string) Gen {
 	i := &GenerateService{
 		name:          name,
 		interfaceName: utils.ToCamelCase(name + "Service"),
 		destPath:      fmt.Sprintf(viper.GetString("gk_service_path_format"), utils.ToLowerSnakeCase(name)),
 		sMiddleware:   sMiddleware,
 		eMiddleware:   eMiddleware,
-		gorillaMux:    gorillaMux,
-		httpRouter:    httpRouter,
+		router:        router,
 		methods:       methods,
 	}
 	i.filePath = path.Join(i.destPath, viper.GetString("gk_service_file_name"))
@@ -119,7 +125,7 @@ func (g *GenerateService) Generate() (err error) {
 	if err != nil {
 		return err
 	}
-	tp := NewGenerateTransport(g.name, g.gorillaMux, g.httpRouter, g.transport, g.pbPath, g.pbImportPath, g.methods)
+	tp := NewGenerateTransport(g.name, g.router, g.transport, g.pbPath, g.pbImportPath, g.methods)
 	err = tp.Generate()
 	if err != nil {
 		return err
@@ -129,7 +135,7 @@ func (g *GenerateService) Generate() (err error) {
 	if err != nil {
 		return err
 	}
-	mG := newGenerateCmd(g.name, g.pbImportPath, g.serviceInterface, g.sMiddleware, g.eMiddleware, g.methods)
+	mG := newGenerateCmd(g.name, g.router, g.pbImportPath, g.serviceInterface, g.sMiddleware, g.eMiddleware, g.methods)
 	return mG.Generate()
 }
 func (g *GenerateService) generateServiceMethods() {
@@ -1480,6 +1486,7 @@ func (g *generateCmdBase) Generate() (err error) {
 type generateCmd struct {
 	BaseGenerator
 	name                               string
+	router                             string
 	methods                            []string
 	generateFirstTime                  bool
 	file                               *parser.File
@@ -1496,11 +1503,12 @@ type generateCmd struct {
 	serviceInterface                   parser.Interface
 }
 
-func newGenerateCmd(name, pbImportPath string, serviceInterface parser.Interface,
-	generateSacDefaultsMiddleware bool, generateEndpointDefaultsMiddleware bool, methods []string) Gen {
+func newGenerateCmd(name, router, pbImportPath string, serviceInterface parser.Interface,
+	generateSacDefaultsMiddleware, generateEndpointDefaultsMiddleware bool, methods []string) Gen {
 	t := &generateCmd{
 		name:                               name,
 		methods:                            methods,
+		router:                             router,
 		interfaceName:                      utils.ToCamelCase(name + "Service"),
 		destPath:                           fmt.Sprintf(viper.GetString("gk_cmd_service_path_format"), utils.ToLowerSnakeCase(name)),
 		httpDestPath:                       fmt.Sprintf(viper.GetString("gk_http_path_format"), utils.ToLowerSnakeCase(name)),
@@ -1980,21 +1988,33 @@ func (g *generateCmd) generateInitHTTP() (err error) {
 			),
 		),
 	).Line()
+
+	var serveReturns *jen.Statement
+	if g.router == FastRouter {
+		serveReturns = jen.Return(
+			jen.Qual("github.com/valyala/fasthttp", "Serve").Call(
+				jen.Id("httpListener"),
+				jen.Id("httpHandler"),
+			),
+		)
+	} else {
+		serveReturns = jen.Return(
+			jen.Qual("net/http", "Serve").Call(
+				jen.Id("httpListener"),
+				jen.Id("httpHandler"),
+			),
+		)
+	}
+
 	pt.Raw().Id("g").Dot("Add").Call(
-		jen.Func().Params().Error().Block(
+		jen.Func().Params().Error().Block(append([]jen.Code{
 			jen.Id("logger").Dot("Log").Call(
 				jen.Lit("transport"),
 				jen.Lit("HTTP"),
 				jen.Lit("addr"),
 				jen.Id("*httpAddr"),
 			),
-			jen.Return(
-				jen.Qual("net/http", "Serve").Call(
-					jen.Id("httpListener"),
-					jen.Id("httpHandler"),
-				),
-			),
-		),
+		}, serveReturns)...),
 		jen.Func().Params(jen.Error()).Block(
 			jen.Id("httpListener").Dot("Close").Call(),
 		),
