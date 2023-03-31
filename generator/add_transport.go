@@ -397,7 +397,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				},
 				"",
 				jen.Id("req").Op(":=").Qual(endpointImport, m.Name+"Request").Block(),
-				jen.Err().Op(":=").Qual("encoding/json", "NewDecoder").Call(
+				jen.Err().Op(":=").Qual("github.com/json-iterator/go", "NewDecoder").Call(
 					jen.Id("r").Dot("Body"),
 				).Dot("Decode").Call(jen.Id("&req")),
 				jen.Return(jen.Id("req"), jen.Id("err")),
@@ -435,7 +435,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				pt,
 				jen.Id("w").Dot("Header").Call().Dot("Set").Call(
 					jen.Lit("Content-Type"), jen.Lit("application/json; charset=utf-8")),
-				jen.Err().Op("=").Qual("encoding/json", "NewEncoder").Call(
+				jen.Err().Op("=").Qual("github.com/json-iterator/go", "NewEncoder").Call(
 					jen.Id("w"),
 				).Dot("Encode").Call(jen.Id("response")),
 				jen.Return(),
@@ -470,7 +470,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				[]jen.Code{},
 				"",
 				jen.Id("w").Dot("WriteHeader").Call(jen.Id("err2code").Call(jen.Err())),
-				jen.Qual("encoding/json", "NewEncoder").Call(jen.Id("w")).Dot("Encode").Call(
+				jen.Qual("github.com/json-iterator/go", "NewEncoder").Call(jen.Id("w")).Dot("Encode").Call(
 					jen.Id("errorBody").Values(
 						jen.Dict{
 							jen.Id("Error"): jen.Err().Dot("Error").Call(),
@@ -491,7 +491,7 @@ func (g *generateHTTPTransport) Generate() (err error) {
 				"error",
 				jen.Var().Id("w").Id("errorBody"),
 				jen.If(
-					jen.Err().Op(":=").Qual("encoding/json", "NewDecoder").Call(
+					jen.Err().Op(":=").Qual("github.com/json-iterator/go", "NewDecoder").Call(
 						jen.Id("r").Dot("Body"),
 					).Dot("Decode").Call(jen.Id("&w")).Id(";").Err().Op("!=").Nil(),
 				).Block(

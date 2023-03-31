@@ -6,10 +6,10 @@ import (
 
 	"strings"
 
-	"github.com/dave/jennifer/jen"
 	"github.com/GrantZheng/kit/fs"
 	"github.com/GrantZheng/kit/parser"
 	"github.com/GrantZheng/kit/utils"
+	"github.com/dave/jennifer/jen"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -288,7 +288,7 @@ func (g *generateHTTPClient) generateDecodeEncodeMethods(endpointImport string) 
 		"error",
 		jen.Var().Id("buf").Qual("bytes", "Buffer").Line(),
 		jen.If(
-			jen.Err().Op(":=").Qual("encoding/json", "NewEncoder").Call(
+			jen.Err().Op(":=").Qual("github.com/json-iterator/go", "NewEncoder").Call(
 				jen.Id("&buf"),
 			).Dot("Encode").Call(jen.Id("request")).Id(";").Err().Op("!=").Nil().Block(
 				jen.Return(jen.Err()),
@@ -326,7 +326,7 @@ func (g *generateHTTPClient) generateDecodeEncodeMethods(endpointImport string) 
 				jen.Return(jen.Nil(), jen.Qual(httpImport, "ErrorDecoder").Call(jen.Id("r"))),
 			),
 			jen.Var().Id("resp").Qual(endpointImport, m.Name+"Response"),
-			jen.Err().Op(":=").Qual("encoding/json", "NewDecoder").Call(
+			jen.Err().Op(":=").Qual("github.com/json-iterator/go", "NewDecoder").Call(
 				jen.Id("r").Dot("Body"),
 			).Dot("Decode").Call(jen.Id("&resp")),
 			jen.Return(jen.Id("resp"), jen.Err()),
